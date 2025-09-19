@@ -19,8 +19,8 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 
 | Repository | Description |
 |------------|-------------|
-| [**openai-client-base**](https://github.com/genai-rs/openai-client-base) | Base client implementation for OpenAI API |
-| [**langfuse-client-base**](https://github.com/genai-rs/langfuse-client-base) | Base client for Langfuse observability platform integration |
+| [**openai-client-base**](https://github.com/genai-rs/openai-client-base) | OpenAPI-generated Rust client for OpenAI API |
+| [**langfuse-client-base**](https://github.com/genai-rs/langfuse-client-base) | OpenAPI-generated Rust client for Langfuse API |
 | [**langfuse-ergonomic**](https://github.com/genai-rs/langfuse-ergonomic) | Ergonomic Rust interface for Langfuse |
 | [**opentelemetry-langfuse**](https://github.com/genai-rs/opentelemetry-langfuse) | OpenTelemetry integration with Langfuse for tracing AI applications |
 
