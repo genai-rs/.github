@@ -20,20 +20,12 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 
 ## 📦 Featured Projects
 
-### Core Libraries
-
-| Project | Description | Status |
-|---------|-------------|--------|
-| **genai** | Unified interface for multiple LLM providers | [![Crates.io](https://img.shields.io/crates/v/genai.svg)](https://crates.io/crates/genai) |
-| **rag-rs** | Retrieval-Augmented Generation toolkit | 🚧 In Development |
-| **prompt-rs** | Advanced prompt engineering and templating | 🚧 In Development |
-| **embed-rs** | High-performance text embeddings | 📋 Planned |
-
-### Tools & Applications
-
-- **CLI Tools** - Command-line interfaces for AI interactions
-- **Integrations** - Plugins and extensions for popular Rust frameworks
-- **Examples** - Comprehensive examples and tutorials
+| Repository | Description |
+|------------|-------------|
+| [**langfuse-client-base**](https://github.com/genai-rs/langfuse-client-base) | Base client for Langfuse observability platform integration |
+| [**langfuse-ergonomic**](https://github.com/genai-rs/langfuse-ergonomic) | Ergonomic Rust interface for Langfuse |
+| [**opentelemetry-langfuse**](https://github.com/genai-rs/opentelemetry-langfuse) | OpenTelemetry integration with Langfuse for tracing AI applications |
+| [**openai-client-base**](https://github.com/genai-rs/openai-client-base) | Base client implementation for OpenAI API |
 
 ## 🛠️ Why Rust for AI?
 
@@ -54,31 +46,7 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 
 ## 🚦 Getting Started
 
-### Quick Start with genai
-
-```toml
-[dependencies]
-genai = "0.1"
-tokio = { version = "1", features = ["full"] }
-```
-
-```rust
-use genai::prelude::*;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new("openai", "your-api-key")?;
-
-    let response = client
-        .chat()
-        .message("Hello from Rust!")
-        .send()
-        .await?;
-
-    println!("{}", response.content());
-    Ok(())
-}
-```
+Check out our repositories above to get started with observability, OpenAI integration, and more for your Rust AI projects.
 
 ## 📚 Resources
 
@@ -108,23 +76,6 @@ Join our growing community of Rust AI developers:
 - **Discord** - [Join our server](https://discord.gg/genai-rs)
 - **GitHub Discussions** - [Ask questions and share ideas](https://github.com/orgs/genai-rs/discussions)
 - **Twitter** - [@genai_rs](https://twitter.com/genai_rs)
-
-## 📊 Roadmap
-
-### 2024 Q4
-- ✅ Launch genai core library
-- 🚧 RAG toolkit initial release
-- 📋 Streaming support improvements
-
-### 2025 Q1
-- 📋 Vector database integrations
-- 📋 Fine-tuning utilities
-- 📋 Model quantization tools
-
-### 2025 Q2
-- 📋 WebAssembly runtime support
-- 📋 Edge deployment tools
-- 📋 Performance benchmarking suite
 
 ## 📄 License
 
