@@ -63,9 +63,7 @@ See our [Contributing Guide](CONTRIBUTING.md) for details.
 
 Join our growing community of Rust AI developers:
 
-- **Discord** - [Join our server](https://discord.gg/genai-rs)
 - **GitHub Discussions** - [Ask questions and share ideas](https://github.com/orgs/genai-rs/discussions)
-- **Twitter** - [@genai_rs](https://twitter.com/genai_rs)
 
 ## 📄 License
 
