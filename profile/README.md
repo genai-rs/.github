@@ -45,13 +45,6 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 
 Check out our repositories above to get started with observability, OpenAI integration, and more for your Rust AI projects.
 
-## 📚 Resources
-
-- **[Documentation](https://docs.rs/genai)** - Comprehensive API documentation
-- **[Examples](https://github.com/genai-rs/examples)** - Learn by example
-- **[Tutorials](https://github.com/genai-rs/tutorials)** - Step-by-step guides
-- **[Blog](https://genai-rs.github.io/blog)** - Updates and deep-dives
-
 ## 🤝 Contributing
 
 We welcome contributions from the Rust and AI communities! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
