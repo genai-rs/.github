@@ -57,36 +57,9 @@ We welcome contributions from the Rust and AI communities! Whether you're fixing
 - 🔧 **Submit PRs** - Contribute code directly
 - ⭐ **Star projects** - Show your support
 
-See our [Contributing Guide](CONTRIBUTING.md) for details.
-
 ## 🌟 Community
 
 Join our growing community of Rust AI developers:
 
 - **GitHub Discussions** - [Ask questions and share ideas](https://github.com/orgs/genai-rs/discussions)
 
-## 📄 License
-
-All projects in this organization are dual-licensed under either:
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-- MIT license ([LICENSE-MIT](LICENSE-MIT))
-
-You may choose either license for your use case.
-
-## 🙏 Acknowledgments
-
-Special thanks to:
-- The Rust community for creating an amazing ecosystem
-- AI/ML researchers and engineers pushing the boundaries
-- Our contributors and users who make this possible
-
----
-
-<div align="center">
-
-**Built with ❤️ and 🦀 by the GenAI-RS community**
-
-[Website](https://genai-rs.dev) • [Documentation](https://docs.genai-rs.dev) • [GitHub](https://github.com/genai-rs)
-
-</div>
