@@ -2,9 +2,6 @@
 
 > Empowering Rust developers with cutting-edge generative AI and LLM capabilities
 
-[![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/License-MIT%20%26%20Apache--2.0-blue.svg)](LICENSE)
-
 ## 🚀 Mission
 
 GenAI-RS is dedicated to bringing the power of generative AI and Large Language Models to the Rust ecosystem. We believe in performance, safety, and developer ergonomics - values that align perfectly with Rust's philosophy.
