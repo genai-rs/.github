@@ -1,12 +1,12 @@
-# 🦀 GenAI-RS
+# GenAI-RS
 
 > Empowering Rust developers with cutting-edge generative AI and LLM capabilities
 
-## 🚀 Mission
+## Mission
 
 GenAI-RS is dedicated to bringing the power of generative AI and Large Language Models to the Rust ecosystem. We believe in performance, safety, and developer ergonomics - values that align perfectly with Rust's philosophy.
 
-## 🎯 What We Do
+## What We Do
 
 We create and maintain high-quality Rust libraries and tools that make it easy for developers to:
 
@@ -15,7 +15,7 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 - **Process & Embed** - Handle text processing, embeddings, and vector operations efficiently
 - **Deploy at Scale** - Leverage Rust's performance for high-throughput AI workloads
 
-## 📦 Featured Projects
+## Featured Projects
 
 | Repository | Description |
 |------------|-------------|
@@ -24,7 +24,7 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 | [**langfuse-ergonomic**](https://github.com/genai-rs/langfuse-ergonomic) | Ergonomic Rust interface for Langfuse |
 | [**opentelemetry-langfuse**](https://github.com/genai-rs/opentelemetry-langfuse) | OpenTelemetry integration with Langfuse for tracing AI applications |
 
-## 🛠️ Why Rust for AI?
+## Why Rust for AI?
 
 ### Performance
 - **Zero-cost abstractions** - Write high-level code without sacrificing performance
@@ -41,25 +41,24 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 - **Embedded systems** - Deploy to IoT and resource-limited devices
 - **Native bindings** - Seamless integration with existing AI libraries
 
-## 🚦 Getting Started
+## Getting Started
 
 Check out our repositories above to get started with observability, OpenAI integration, and more for your Rust AI projects.
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions from the Rust and AI communities! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
 
 ### Ways to Contribute
 
-- 🐛 **Report bugs** - Help us identify and fix issues
-- 💡 **Suggest features** - Share your ideas for improvements
-- 📝 **Improve docs** - Help others learn with better documentation
-- 🔧 **Submit PRs** - Contribute code directly
-- ⭐ **Star projects** - Show your support
+- **Report bugs** - Help us identify and fix issues
+- **Suggest features** - Share your ideas for improvements
+- **Improve docs** - Help others learn with better documentation
+- **Submit PRs** - Contribute code directly
+- **Star projects** - Show your support
 
-## 🌟 Community
+## Community
 
 Join our growing community of Rust AI developers:
 
 - **GitHub Discussions** - [Ask questions and share ideas](https://github.com/orgs/genai-rs/discussions)
-
