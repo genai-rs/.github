@@ -20,26 +20,10 @@ We create and maintain high-quality Rust libraries and tools that make it easy f
 | Repository | Description |
 |------------|-------------|
 | [**openai-client-base**](https://github.com/genai-rs/openai-client-base) | OpenAPI-generated Rust client for OpenAI API |
+| [**openai-ergonomic**](https://github.com/genai-rs/openai-ergonomic) | Ergonomic Rust interface for OpenAI |
 | [**langfuse-client-base**](https://github.com/genai-rs/langfuse-client-base) | OpenAPI-generated Rust client for Langfuse API |
 | [**langfuse-ergonomic**](https://github.com/genai-rs/langfuse-ergonomic) | Ergonomic Rust interface for Langfuse |
 | [**opentelemetry-langfuse**](https://github.com/genai-rs/opentelemetry-langfuse) | OpenTelemetry integration with Langfuse for tracing AI applications |
-
-## Why Rust for AI?
-
-### Performance
-- **Zero-cost abstractions** - Write high-level code without sacrificing performance
-- **Native speed** - No runtime overhead, perfect for inference and processing
-- **Efficient memory usage** - Predictable memory patterns for resource-constrained environments
-
-### Safety
-- **Memory safety** - Eliminate entire classes of bugs at compile time
-- **Thread safety** - Fearless concurrency for parallel AI workloads
-- **Type safety** - Strong typing prevents runtime errors
-
-### Ecosystem
-- **WebAssembly support** - Run AI models in browsers and edge environments
-- **Embedded systems** - Deploy to IoT and resource-limited devices
-- **Native bindings** - Seamless integration with existing AI libraries
 
 ## Getting Started
 
@@ -56,9 +40,3 @@ We welcome contributions from the Rust and AI communities! Whether you're fixing
 - **Improve docs** - Help others learn with better documentation
 - **Submit PRs** - Contribute code directly
 - **Star projects** - Show your support
-
-## Community
-
-Join our growing community of Rust AI developers:
-
-- **GitHub Discussions** - [Ask questions and share ideas](https://github.com/orgs/genai-rs/discussions)
