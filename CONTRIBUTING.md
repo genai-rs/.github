@@ -247,9 +247,8 @@ pub enum Error {
 
 ## 📮 Contact
 
-- **Discord**: [Join our server](https://discord.gg/genai-rs)
 - **GitHub Discussions**: [Ask questions](https://github.com/orgs/genai-rs/discussions)
-- **Email**: contribute@genai-rs.dev
+- **Email**: genai-rs@timvw.be
 
 ## 📜 License
 
