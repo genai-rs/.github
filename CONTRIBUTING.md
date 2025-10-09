@@ -2,14 +2,14 @@
 
 Thank you for your interest in contributing to GenAI-RS! We're excited to have you join our community of Rust developers building the future of AI.
 
-## 🎯 Our Values
+## Our Values
 
 - **Quality over Quantity** - Well-tested, documented code is better than rushed features
 - **Performance Matters** - We optimize for speed and efficiency
 - **Developer Experience** - APIs should be intuitive and ergonomic
 - **Community First** - Be welcoming, helpful, and respectful
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -37,7 +37,7 @@ git remote add upstream https://github.com/genai-rs/PROJECT_NAME.git
 git checkout -b feature/your-feature-name
 ```
 
-## 🔧 Development Workflow
+## Development Workflow
 
 ### Code Style
 
@@ -124,7 +124,7 @@ pub async fn send(&self) -> Result<Response> {
 }
 ```
 
-## 📝 Pull Request Process
+## Pull Request Process
 
 1. **Update your fork**
 ```bash
@@ -161,7 +161,7 @@ git push origin feature/your-feature-name
 - Be open to suggestions
 - Ask questions if something is unclear
 
-## 🐛 Reporting Issues
+## Reporting Issues
 
 ### Bug Reports
 
@@ -180,7 +180,7 @@ Please include:
 - Alternative solutions considered
 - Potential implementation approach
 
-## 💡 Types of Contributions
+## Types of Contributions
 
 ### Good First Issues
 
@@ -208,7 +208,7 @@ Look for issues labeled `good-first-issue` - these are great for newcomers!
 - Share your projects using our libraries
 - Write blog posts or tutorials
 
-## 🏗️ Architecture Guidelines
+## Architecture Guidelines
 
 ### Error Handling
 
@@ -237,7 +237,7 @@ pub enum Error {
 - Trait-based abstractions for extensibility
 - Zero-cost abstractions where possible
 
-## 🤝 Community Guidelines
+## Community Guidelines
 
 - Be respectful and inclusive
 - Help others learn and grow
@@ -245,15 +245,15 @@ pub enum Error {
 - Focus on constructive feedback
 - Celebrate successes together
 
-## 📮 Contact
+## Contact
 
 - **GitHub Discussions**: [Ask questions](https://github.com/orgs/genai-rs/discussions)
 - **Email**: genai-rs@timvw.be
 
-## 📜 License
+## License
 
 By contributing, you agree that your contributions will be dual-licensed under Apache-2.0 and MIT.
 
 ---
 
-Thank you for contributing to GenAI-RS! Together, we're building the future of AI in Rust. 🦀✨
+Thank you for contributing to GenAI-RS! Together, we're building the future of AI in Rust.
