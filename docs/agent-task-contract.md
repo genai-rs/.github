@@ -35,8 +35,17 @@ If RTK is required but unavailable, report the environment blocker.
    within its named files and acceptance criteria. Fix generated behavior in
    generator inputs, templates, or maintained patches, then regenerate using the
    repository procedure. Do not hand-edit generated output as the lasting fix.
-   Do not invent or backfill absent upstream schemas or silently change API/MSRV
-   policy. Request review of any compatibility decision under the local policy.
+   Never invent or fabricate schemas. Retain or backfill an absent upstream
+   schema only when the target repository has an explicit, reviewed
+   provider-specific compatibility policy and sourced evidence for its published
+   Rust API. Keep that compatibility input bounded, versioned, reproducible,
+   separately identifiable from raw upstream data, and covered by regression
+   fixtures. For example, [OpenAI's repository rules](https://github.com/genai-rs/openai-client-base/blob/main/AGENTS.md)
+   require strict upstream mirroring and forbid backfills; Langfuse's bounded,
+   evidenced v3 inventory is demonstrated by [merged PR 238](https://github.com/genai-rs/langfuse-client-base/pull/238)
+   and distinguished in the [proposed provider policy](https://github.com/genai-rs/.github/pull/3).
+   Follow the target repository's current policy; request review before
+   adding or extending compatibility data. Do not silently change API/MSRV policy.
 4. **Validate.** Run the exact focused commands from the template, recording the
    working directory, tool versions, exit status, and relevant result. Prefer
    offline tests, local fixtures, and mock servers; live service tests require
@@ -101,6 +110,7 @@ Isolated checkout / working directory: <absolute path>
 Problem and reproduction: <trigger, exact command, actual vs expected result>
 Allowed files: <explicit paths; include regenerated outputs if required>
 Generated-source boundary: <inputs/patches -> output paths, or none>
+Compatibility policy and schema provenance: <local policy/source revision, or none>
 Acceptance criteria:
 - <observable result>
 Exact tests and checks:
