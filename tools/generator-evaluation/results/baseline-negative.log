@@ -1,0 +1,35 @@
+
+running 1 test
+test tests::dotted_wire ... FAILED
+
+failures:
+
+---- tests::dotted_wire stdout ----
+
+thread 'tests::dotted_wire' (809301) panicked at src/lib.rs:14:9:
+assertion `left == right` failed
+  left: String("response.mcp_call.completed")
+ right: "response_mcp_call_completed"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::dotted_wire
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+warning: associated function `new` is never used
+  --> src/baseline_model.rs:33:12
+   |
+31 | impl RealtimeBetaServerEventResponseMcpCallCompleted {
+   | ---------------------------------------------------- associated function in this implementation
+32 |     /// Returned when an MCP tool call has completed successfully.
+33 |     pub fn new(
+   |            ^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `gen01-baseline-probe` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (work/probe-locked/baseline-probe/target/debug/deps/gen01_baseline_probe-b7aeacf5be572410)
+error: test failed, to rerun pass `--lib`

@@ -1,0 +1,620 @@
+{
+  "type": "object",
+  "properties": {
+    "format_version": {
+      "const": 1
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "utc": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "utc",
+        "platform",
+        "rustc",
+        "commands"
+      ],
+      "additionalProperties": false
+    },
+    "candidate": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "generator_version": {
+          "type": "string"
+        },
+        "generator_revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "configuration": {
+          "type": "object"
+        },
+        "scope": {
+          "enum": [
+            "sampled_generated_module",
+            "synthetic_generation",
+            "full_upstream_generation",
+            "sdk_adapter"
+          ]
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "name",
+        "repository",
+        "revision",
+        "generator_version",
+        "generator_revision",
+        "configuration",
+        "scope",
+        "source_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "corpus_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "snapshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "openapi": {
+                "type": "string"
+              },
+              "operation_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "unresolved_local_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "url",
+              "sha256",
+              "bytes",
+              "openapi",
+              "operation_ids",
+              "unresolved_local_refs"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "corpus_sha256",
+        "snapshots"
+      ],
+      "additionalProperties": false
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "layer": {
+            "enum": [
+              "generator_model",
+              "generated_http",
+              "sdk_transport"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "fail",
+              "unsupported",
+              "not_tested"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "layer",
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "measured",
+            "not_tested"
+          ]
+        },
+        "expected_operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supported_operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missing_operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "untested_operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type_fidelity_losses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string"
+              },
+              "expected": {
+                "type": "string"
+              },
+              "actual": {
+                "type": "string"
+              },
+              "impact": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "location",
+              "expected",
+              "actual",
+              "impact"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "status",
+        "expected_operations",
+        "supported_operations",
+        "missing_operations",
+        "untested_operations",
+        "type_fidelity_losses"
+      ],
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "manual_patches": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "build_time": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "peak_memory": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "msrv": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "output_determinism": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "middleware_compatibility": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "public_api_migration_cost": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "measured"
+                },
+                "value": {},
+                "unit": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "value",
+                "unit",
+                "method"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "not_tested"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "manual_patches",
+        "build_time",
+        "peak_memory",
+        "msrv",
+        "output_determinism",
+        "middleware_compatibility",
+        "public_api_migration_cost"
+      ],
+      "additionalProperties": false
+    },
+    "negative_control": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "not_tested"
+          ]
+        },
+        "expected_exit": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "observed_exit": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "evidence": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "expected_exit",
+        "observed_exit",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "format_version",
+    "run",
+    "candidate",
+    "inputs",
+    "cases",
+    "coverage",
+    "metrics",
+    "negative_control",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GEN01 comparison result v1"
+}
