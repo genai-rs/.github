@@ -1,9 +1,12 @@
 # Generated-client compatibility and release decision
 
-Status: **proposed; maintainer or designated senior reviewer acceptance pending**.
-Evidence reviewed on 17 October 2026 for ORG03 (`genai-rs#gbsx`). Existing
-repository rules remain authoritative; this proposal changes no crate, Rust
-minimum, release configuration, or publication authority.
+Status: **accepted policy decision** by the designated supervisor reviewer on
+17 October 2026. The acceptance covers the provider boundaries and compatibility
+data retirement process in reviewed commit
+`4cf36c7bfa937a0baf85b80699d47697dac4b7c3`; this commit records that acceptance.
+Evidence was reviewed for ORG03 (`genai-rs#gbsx`). Existing repository rules
+remain authoritative; this decision changes no crate, Rust minimum, release
+configuration, or publication authority.
 
 ## Decision and supported boundaries
 
@@ -125,11 +128,16 @@ an explicit repository policy decision.
 
 ## Acceptance record
 
-Pending: the maintainer or designated senior reviewer must record acceptance or
-requested revisions in this PR and Kata `genai-rs#gbsx`, naming the exact document
-commit, provider boundaries, retirement process and any conditions. Until that
-evidence exists, this is a draft decision and ORG03 remains open with
-`needs-review`. Merging code or publishing a package requires separate authority.
+Accepted on 17 October 2026 by the designated supervisor reviewer, as recorded
+in the supervisor task thread and Kata `genai-rs#gbsx`: the distinct OpenAI
+upstream-mirroring and Langfuse bounded v3 compatibility contracts, the retirement
+proposal/review/migration process, and the separation of releases and Rust
+minimums. The reviewer checked 11 pinned sources, current manifests, all 17
+compatibility operations, and PR 238 merge status and reported limitations. The
+acceptance applies to the reviewed decision at commit
+`4cf36c7bfa937a0baf85b80699d47697dac4b7c3`; this follow-up records that decision
+in the document. No production integration, merge, or release authority is
+inferred. Merging code or publishing a package requires separate authority.
 
 [oa-rules]: https://github.com/genai-rs/openai-client-base/blob/806bd82935d1455f1dde6551d37e26291b35f2f4/AGENTS.md
 [oa-manifest]: https://github.com/genai-rs/openai-client-base/blob/806bd82935d1455f1dde6551d37e26291b35f2f4/Cargo.toml
