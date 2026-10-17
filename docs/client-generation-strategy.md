@@ -1,11 +1,14 @@
 # Client generation strategy by provider
 
-**Decision proposed for maintainer review — 17 October 2026.** GEN02–GEN05 are
-accepted bounded evaluations. Their reports establish specific failures and
-small areas of successful behavior; they do not establish that an alternative
-client is ready for production. Keep OpenAI and Langfuse on their separate
-existing generation paths for now. Do not adopt a replacement or infer that the
-two providers need the same strategy.
+**Near-term strategy accepted by the designated supervisor on 17 October 2026**
+(**reviewed commit** `3e3c300e943b82f5807f4d51859233fe1e48068e`). This acceptance
+covers the provider-specific strategy decision only; it does not approve
+generator adoption, migration, full-coverage claims or package publication.
+GEN02–GEN05 are accepted bounded evaluations. Their reports establish specific
+failures and small areas of successful behavior; they do not establish that an
+alternative client is ready for production. Keep OpenAI and Langfuse on their
+separate existing generation paths for now. Do not adopt a replacement or infer
+that the two providers need the same strategy.
 
 The compact, checked-in replay record and evidence ledger is in
 [`client-generation-strategy-evidence.md`](client-generation-strategy-evidence.md).
