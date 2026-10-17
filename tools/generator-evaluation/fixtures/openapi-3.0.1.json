@@ -1,0 +1,495 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "GEN01 SYNTHETIC EVALUATION ONLY",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:9876"
+    }
+  ],
+  "paths": {
+    "/enum": {
+      "post": {
+        "operationId": "echo_enum",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DottedEnum"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DottedEnum"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/open-enum": {
+      "post": {
+        "operationId": "echo_open_enum",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenEnum"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenEnum"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tagged": {
+      "post": {
+        "operationId": "echo_tagged",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Tagged"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tagged"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/untagged": {
+      "post": {
+        "operationId": "echo_untagged",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Untagged"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Untagged"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/composed": {
+      "post": {
+        "operationId": "echo_composed",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Composed"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Composed"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/presence": {
+      "post": {
+        "operationId": "echo_presence",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Presence"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Presence"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tree": {
+      "post": {
+        "operationId": "echo_tree",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Tree"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Echo exactly the JSON value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tree"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload": {
+      "post": {
+        "operationId": "upload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Upload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/error": {
+      "get": {
+        "operationId": "error",
+        "responses": {
+          "400": {
+            "description": "Typed API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Unknown HTTP error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stream": {
+      "get": {
+        "operationId": "stream",
+        "responses": {
+          "200": {
+            "description": "SSE transport (Event payload schema is tested separately)",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DottedEnum": {
+        "type": "string",
+        "enum": [
+          "response.mcp_call.completed",
+          "response.mcp_call.failed"
+        ]
+      },
+      "OpenEnum": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/DottedEnum"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "Tagged": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Text"
+          },
+          {
+            "$ref": "#/components/schemas/Count"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/Text",
+            "count": "#/components/schemas/Count"
+          }
+        }
+      },
+      "Text": {
+        "type": "object",
+        "required": [
+          "kind",
+          "text"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "Count": {
+        "type": "object",
+        "required": [
+          "kind",
+          "count"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "count"
+            ]
+          },
+          "count": {
+            "type": "integer"
+          }
+        }
+      },
+      "Untagged": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          }
+        ]
+      },
+      "Base": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "Composed": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Base"
+          },
+          {
+            "type": "object",
+            "required": [
+              "label"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "Presence": {
+        "type": "object",
+        "required": [
+          "required",
+          "required_nullable"
+        ],
+        "properties": {
+          "required": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "string"
+          },
+          "required_nullable": {
+            "type": "string",
+            "nullable": true
+          },
+          "optional_nullable": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Tree": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tree"
+            }
+          }
+        }
+      },
+      "Upload": {
+        "type": "object",
+        "required": [
+          "file",
+          "purpose"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      },
+      "UploadResult": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "type",
+          "delta"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "response.output_text.delta"
+            ]
+          },
+          "delta": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

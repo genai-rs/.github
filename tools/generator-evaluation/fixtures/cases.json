@@ -1,0 +1,545 @@
+{
+  "format_version": 1,
+  "synthetic_only": true,
+  "cases": [
+    {
+      "id": "enum.dotted",
+      "layer": "generator_model",
+      "schema": "DottedEnum",
+      "wire_input": "response.mcp_call.completed",
+      "expected": {
+        "accept": true,
+        "wire_output": "response.mcp_call.completed"
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_enum"
+    },
+    {
+      "id": "enum.unknown-closed",
+      "layer": "generator_model",
+      "schema": "DottedEnum",
+      "wire_input": "future.event",
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_enum"
+    },
+    {
+      "id": "enum.unknown-open",
+      "layer": "generator_model",
+      "schema": "OpenEnum",
+      "wire_input": "future.event",
+      "expected": {
+        "accept": true,
+        "wire_output": "future.event"
+      },
+      "pass_criterion": "Preserve unknown string exactly through a typed known-or-other representation; a whole-model Value fallback is a fidelity loss.",
+      "operation_id": "echo_open_enum"
+    },
+    {
+      "id": "tagged.text",
+      "layer": "generator_model",
+      "schema": "Tagged",
+      "wire_input": {
+        "kind": "text",
+        "text": "hello"
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "kind": "text",
+          "text": "hello"
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_tagged"
+    },
+    {
+      "id": "tagged.count",
+      "layer": "generator_model",
+      "schema": "Tagged",
+      "wire_input": {
+        "kind": "count",
+        "count": 3
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "kind": "count",
+          "count": 3
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_tagged"
+    },
+    {
+      "id": "tagged.wrong-payload",
+      "layer": "generator_model",
+      "schema": "Tagged",
+      "wire_input": {
+        "kind": "count",
+        "text": "hello"
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_tagged"
+    },
+    {
+      "id": "untagged.string",
+      "layer": "generator_model",
+      "schema": "Untagged",
+      "wire_input": "hello",
+      "expected": {
+        "accept": true,
+        "wire_output": "hello"
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_untagged"
+    },
+    {
+      "id": "untagged.integer",
+      "layer": "generator_model",
+      "schema": "Untagged",
+      "wire_input": 42,
+      "expected": {
+        "accept": true,
+        "wire_output": 42
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_untagged"
+    },
+    {
+      "id": "untagged.object-rejected",
+      "layer": "generator_model",
+      "schema": "Untagged",
+      "wire_input": {
+        "value": 42
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_untagged"
+    },
+    {
+      "id": "allof.complete",
+      "layer": "generator_model",
+      "schema": "Composed",
+      "wire_input": {
+        "id": "a",
+        "label": "b"
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "id": "a",
+          "label": "b"
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_composed"
+    },
+    {
+      "id": "allof.missing-base",
+      "layer": "generator_model",
+      "schema": "Composed",
+      "wire_input": {
+        "label": "b"
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_composed"
+    },
+    {
+      "id": "allof.missing-extension",
+      "layer": "generator_model",
+      "schema": "Composed",
+      "wire_input": {
+        "id": "a"
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_composed"
+    },
+    {
+      "id": "presence.omitted",
+      "layer": "generator_model",
+      "schema": "Presence",
+      "wire_input": {
+        "required": "r",
+        "required_nullable": null
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "required": "r",
+          "required_nullable": null
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_presence"
+    },
+    {
+      "id": "presence.explicit-null",
+      "layer": "generator_model",
+      "schema": "Presence",
+      "wire_input": {
+        "required": "r",
+        "required_nullable": null,
+        "optional_nullable": null
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "required": "r",
+          "required_nullable": null,
+          "optional_nullable": null
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_presence"
+    },
+    {
+      "id": "presence.values",
+      "layer": "generator_model",
+      "schema": "Presence",
+      "wire_input": {
+        "required": "r",
+        "required_nullable": "n",
+        "optional": "o",
+        "optional_nullable": "on"
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "required": "r",
+          "required_nullable": "n",
+          "optional": "o",
+          "optional_nullable": "on"
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_presence"
+    },
+    {
+      "id": "presence.required-missing",
+      "layer": "generator_model",
+      "schema": "Presence",
+      "wire_input": {
+        "required_nullable": null
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_presence"
+    },
+    {
+      "id": "presence.required-nullable-missing",
+      "layer": "generator_model",
+      "schema": "Presence",
+      "wire_input": {
+        "required": "r"
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_presence"
+    },
+    {
+      "id": "presence.optional-nonnullable-null",
+      "layer": "generator_model",
+      "schema": "Presence",
+      "wire_input": {
+        "required": "r",
+        "required_nullable": null,
+        "optional": null
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_presence"
+    },
+    {
+      "id": "recursive.nested",
+      "layer": "generator_model",
+      "schema": "Tree",
+      "wire_input": {
+        "name": "root",
+        "children": [
+          {
+            "name": "leaf",
+            "children": []
+          }
+        ]
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "name": "root",
+          "children": [
+            {
+              "name": "leaf",
+              "children": []
+            }
+          ]
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "echo_tree"
+    },
+    {
+      "id": "recursive.invalid-child",
+      "layer": "generator_model",
+      "schema": "Tree",
+      "wire_input": {
+        "name": "root",
+        "children": [
+          {}
+        ]
+      },
+      "expected": {
+        "accept": false,
+        "wire_output": null
+      },
+      "pass_criterion": "Reject deserialization before emitting a request; no output value.",
+      "operation_id": "echo_tree"
+    },
+    {
+      "id": "error.typed-body",
+      "layer": "generator_model",
+      "schema": "Error",
+      "wire_input": {
+        "error": {
+          "code": "bad_request",
+          "message": "Invalid input"
+        }
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "error": {
+            "code": "bad_request",
+            "message": "Invalid input"
+          }
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "error"
+    },
+    {
+      "id": "stream.event-model",
+      "layer": "generator_model",
+      "schema": "Event",
+      "wire_input": {
+        "type": "response.output_text.delta",
+        "delta": "hé"
+      },
+      "expected": {
+        "accept": true,
+        "wire_output": {
+          "type": "response.output_text.delta",
+          "delta": "hé"
+        }
+      },
+      "pass_criterion": "Deserialize into typed model and reserialize to equal JSON; object key order is ignored, omission/null and array order are significant.",
+      "operation_id": "stream"
+    },
+    {
+      "id": "multipart.bytes",
+      "layer": "generated_http",
+      "operation_id": "upload",
+      "wire_input": {
+        "method": "POST",
+        "path": "/upload",
+        "parts": [
+          {
+            "name": "file",
+            "filename": "sample.bin",
+            "content_type": "application/octet-stream",
+            "bytes_hex": "000aff"
+          },
+          {
+            "name": "purpose",
+            "text": "evaluation"
+          }
+        ],
+        "mock_response": {
+          "status": 200,
+          "body": {
+            "id": "file_1"
+          }
+        }
+      },
+      "expected": {
+        "request_parts_exact": true,
+        "result": {
+          "id": "file_1"
+        }
+      },
+      "pass_criterion": "Local mock parses multipart; assert names, filename, content type and exact binary bytes, and typed response; normalize only randomized boundary. No JSON/base64 substitution or silently omitted file."
+    },
+    {
+      "id": "error.http-status",
+      "layer": "generated_http",
+      "operation_id": "error",
+      "wire_input": {
+        "method": "GET",
+        "path": "/error",
+        "mock_response": {
+          "status": 400,
+          "headers": {
+            "content-type": "application/json"
+          },
+          "body": {
+            "error": {
+              "code": "bad_request",
+              "message": "Invalid input"
+            }
+          }
+        }
+      },
+      "expected": {
+        "success": false,
+        "status": 400,
+        "typed_error": {
+          "error": {
+            "code": "bad_request",
+            "message": "Invalid input"
+          }
+        }
+      },
+      "pass_criterion": "Expose status and typed error fields; returning success or losing the body fails."
+    },
+    {
+      "id": "error.unknown-body",
+      "layer": "generated_http",
+      "operation_id": "error",
+      "wire_input": {
+        "method": "GET",
+        "path": "/error",
+        "mock_response": {
+          "status": 502,
+          "headers": {
+            "content-type": "text/plain"
+          },
+          "body": "upstream unavailable"
+        }
+      },
+      "expected": {
+        "success": false,
+        "status": 502,
+        "raw_body": "upstream unavailable"
+      },
+      "pass_criterion": "Preserve unknown HTTP status and raw body without a JSON parse panic; a raw body here is intentional, not a model Value fallback."
+    },
+    {
+      "id": "stream.chunked-sse",
+      "layer": "sdk_transport",
+      "operation_id": "stream",
+      "wire_input": {
+        "method": "GET",
+        "path": "/stream",
+        "response_status": 200,
+        "content_type": "text/event-stream",
+        "chunks_utf8": [
+          "data: {\"type\":\"response.output_text.delta\",\"delta\":\"h",
+          "é\"}\r\n\r",
+          "\n: keepalive\n\ndata: [DONE]\n\n"
+        ],
+        "repeat_with_every_byte_split": true
+      },
+      "expected": {
+        "events": [
+          {
+            "type": "response.output_text.delta",
+            "delta": "hé"
+          }
+        ],
+        "terminal": "done",
+        "events_after_done": 0
+      },
+      "pass_criterion": "Use local mock; repeat splitting the UTF-8 bytes at every position, including within é. Deliver exactly one typed event, ignore comment heartbeat, recognize DONE and close once without buffering the whole body."
+    },
+    {
+      "id": "stream.bad-event",
+      "layer": "sdk_transport",
+      "operation_id": "stream",
+      "wire_input": {
+        "chunks_utf8": [
+          "data: {broken}\n\n"
+        ]
+      },
+      "expected": {
+        "error": "decode",
+        "events": []
+      },
+      "pass_criterion": "Expose decode error without panic or silently dropping malformed event."
+    },
+    {
+      "id": "stream.cancel",
+      "layer": "sdk_transport",
+      "operation_id": "stream",
+      "wire_input": {
+        "chunks_utf8": [
+          "data: {\"type\":\"response.output_text.delta\",\"delta\":\"a\"}\n\n"
+        ],
+        "server_holds_open": true,
+        "consumer_action": "drop after first event"
+      },
+      "expected": {
+        "events": [
+          {
+            "type": "response.output_text.delta",
+            "delta": "a"
+          }
+        ],
+        "connection_closed_within_ms": 1000
+      },
+      "pass_criterion": "Mock observes disconnect within 1 second after consumer drops stream; record scheduler/timeout settings. No continued background read."
+    },
+    {
+      "id": "stream.non-success",
+      "layer": "sdk_transport",
+      "operation_id": "stream",
+      "wire_input": {
+        "response_status": 429,
+        "content_type": "application/json",
+        "body": {
+          "error": {
+            "code": "rate_limit",
+            "message": "Later"
+          }
+        }
+      },
+      "expected": {
+        "events": [],
+        "status": 429,
+        "typed_error": {
+          "error": {
+            "code": "rate_limit",
+            "message": "Later"
+          }
+        }
+      },
+      "pass_criterion": "Check status before SSE decoding and retain typed error. No real API calls."
+    }
+  ]
+}
