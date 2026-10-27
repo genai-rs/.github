@@ -1,0 +1,189 @@
+# Reusable CI workflow for genai-rs Rust crates.
+#
+# Call it from a repo with:
+#
+#   jobs:
+#     ci:
+#       uses: genai-rs/.github/.github/workflows/rust-ci.yml@main
+#       with: { msrv: "1.88" }
+#       secrets: inherit
+#
+# Job names are stable so they can be used as required status checks:
+#   fmt, clippy (stable), clippy (msrv), test (<os>, stable), test (<os>, msrv),
+#   doc, semver-checks, coverage.
+# The msrv entries resolve to `inputs.msrv` at run time; the check name stays
+# "msrv" so bumping the MSRV never breaks branch protection.
+name: Rust CI
+
+on:
+  workflow_call:
+    inputs:
+      msrv:
+        description: Minimum supported Rust version (e.g. "1.88")
+        required: true
+        type: string
+      features:
+        description: Cargo feature flags passed to clippy/test/doc
+        required: false
+        type: string
+        default: --all-features
+      run-semver-checks:
+        description: Run cargo-semver-checks against the latest published release
+        required: false
+        type: boolean
+        default: true
+      run-coverage:
+        description: Run cargo-llvm-cov and upload to Codecov
+        required: false
+        type: boolean
+        default: true
+      run-doc:
+        description: Build docs with RUSTDOCFLAGS=-D warnings (disable where rustdoc OOMs)
+        required: false
+        type: boolean
+        default: true
+      generated-crate:
+        description: Generated client crate; skips semver-checks and coverage
+        required: false
+        type: boolean
+        default: false
+      os-matrix:
+        description: JSON array of runner labels for the test matrix
+        required: false
+        type: string
+        default: '["ubuntu-latest","macos-latest","windows-latest"]'
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+  clippy:
+    name: clippy (${{ matrix.toolchain }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, msrv]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain == 'msrv' && inputs.msrv || 'stable' }}
+          components: clippy
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
+      - name: Run clippy
+        run: cargo clippy --all-targets ${{ inputs.features }} -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }}, ${{ matrix.toolchain }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os-matrix) }}
+        toolchain: [stable, msrv]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain == 'msrv' && inputs.msrv || 'stable' }}
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
+      - name: Build
+        run: cargo build --verbose ${{ inputs.features }}
+      # `cargo test` also compiles examples and runs doc tests.
+      - name: Run tests
+        run: cargo test --verbose ${{ inputs.features }}
+
+  doc:
+    name: doc
+    if: inputs.run-doc
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Build documentation
+        run: cargo doc --no-deps ${{ inputs.features }}
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  semver-checks:
+    name: semver-checks
+    if: inputs.run-semver-checks && !inputs.generated-crate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Check semver compatibility
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+
+  coverage:
+    name: coverage
+    if: inputs.run-coverage && !inputs.generated-crate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Informational only: never block a merge on coverage tooling.
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate coverage
+        run: cargo llvm-cov ${{ inputs.features }} --lcov --output-path lcov.info
+      # Requires `secrets: inherit` on the caller so CODECOV_TOKEN is available.
+      - name: Upload to Codecov
+        if: always()
+        uses: codecov/codecov-action@v7
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}

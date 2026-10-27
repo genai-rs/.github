@@ -1,0 +1,133 @@
+# Reusable security workflow for genai-rs Rust crates.
+#
+# The caller supplies its own triggers (push, pull_request, schedule,
+# workflow_dispatch) and calls this with:
+#
+#   jobs:
+#     security:
+#       uses: genai-rs/.github/.github/workflows/rust-security.yml@main
+#       secrets: inherit
+#
+# Job names (stable, usable as required checks):
+#   cargo-audit, cargo-deny, gitleaks, codeql.
+name: Rust Security
+
+on:
+  workflow_call:
+    inputs:
+      run-codeql:
+        description: Run CodeQL analysis for Rust (on push and schedule events only)
+        required: false
+        type: boolean
+        default: true
+      run-gitleaks:
+        description: Run gitleaks secret scanning over the full history
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cargo-audit:
+    name: cargo-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      # Library crates may not commit Cargo.lock; audit-check needs one.
+      # When a lockfile is committed it is audited as-is and left untouched.
+      - name: Generate Cargo.lock if missing
+        run: test -f Cargo.lock || cargo generate-lockfile
+      - name: Run cargo audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify a committed Cargo.lock was not modified
+        if: always()
+        run: git diff --exit-code -- Cargo.lock
+
+  cargo-deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      # Prefer the caller repo's own deny.toml. If the repo has none, fall back
+      # to the canonical org copy from genai-rs/.github@main so every crate is
+      # checked against the same license/advisory policy.
+      - name: Fetch canonical deny.toml if the repo has none
+        run: |
+          if [ -f deny.toml ]; then
+            echo "Using repo-local deny.toml"
+          else
+            echo "No deny.toml in repo; downloading canonical copy from genai-rs/.github@main"
+            curl -fsSL --retry 3 \
+              https://raw.githubusercontent.com/genai-rs/.github/main/deny.toml \
+              -o deny.toml
+          fi
+      - name: Run cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources
+          arguments: --all-features
+
+  gitleaks:
+    name: gitleaks
+    if: inputs.run-gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  codeql:
+    name: codeql
+    # Only on main pushes and scheduled runs to keep PR CI fast.
+    if: inputs.run-codeql && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: rust
+          config: |
+            queries:
+              - uses: security-and-quality
+      - name: Build
+        run: cargo build --verbose
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
