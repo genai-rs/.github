@@ -67,7 +67,7 @@ downloads the canonical [`deny.toml`](deny.toml) from this repository.
 
 ## Renovate preset
 
-Extend [`renovate-default.json5`](renovate-default.json5) from a repo's
+Extend [`renovate-default.json`](renovate-default.json) from a repo's
 `renovate.json5`:
 
 ```json5
