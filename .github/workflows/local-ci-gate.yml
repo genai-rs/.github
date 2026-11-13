@@ -1,0 +1,143 @@
+# Reusable "local-ci" gate for genai-rs repositories.
+#
+# Decides how much of the heavy CI a commit needs. Repo-specific heavy jobs
+# (build matrices, feature-combination tests, cargo-udeps, ...) depend on it:
+#
+#   jobs:
+#     gate:
+#       uses: genai-rs/.github/.github/workflows/local-ci-gate.yml@main
+#     build:
+#       needs: gate
+#       if: ${{ !cancelled() }}            # fail open if the gate itself fails
+#       runs-on: ${{ needs.gate.outputs.heavy != 'false' && matrix.os || 'ubuntu-latest' }}
+#       env:
+#         RUN: ${{ needs.gate.outputs.heavy != 'false' }}
+#       steps:
+#         - if: env.RUN == 'true'
+#           ...
+#
+# Skip at STEP level (not with a job-level `if:`), so matrix jobs keep their
+# expanded check names (e.g. "Build (x86_64-apple-darwin)") and still satisfy
+# required status checks with a passing conclusion.
+#
+# The same decision logic is inlined as the `gate` job of rust-ci.yml; keep
+# both copies in sync.
+#
+# Outputs:
+#   mode    full | local-ci | release
+#   heavy   "true" when heavy jobs must run (mode == full)
+#   all-os  "true" when macOS/Windows jobs must run as well (not a PR, or a PR
+#           labelled `full-ci`)
+#   reason  human-readable explanation
+name: Local CI gate
+
+on:
+  workflow_call:
+    inputs:
+      wait-seconds:
+        description: How long to wait for a `local-ci` commit status on same-repo PRs
+        required: false
+        type: number
+        default: 60
+    outputs:
+      mode:
+        description: full | local-ci | release
+        value: ${{ jobs.decide.outputs.mode }}
+      heavy:
+        description: '"true" when heavy jobs must run'
+        value: ${{ jobs.decide.outputs.heavy }}
+      all-os:
+        description: '"true" when macOS/Windows jobs must run'
+        value: ${{ jobs.decide.outputs.all-os }}
+      reason:
+        description: Why this mode was chosen
+        value: ${{ jobs.decide.outputs.reason }}
+
+permissions:
+  contents: read
+
+jobs:
+  decide:
+    name: decide
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.gate.outputs.mode }}
+      heavy: ${{ steps.gate.outputs.heavy }}
+      all-os: ${{ steps.gate.outputs.all-os }}
+      reason: ${{ steps.gate.outputs.reason }}
+    steps:
+      - name: Decide CI mode
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          FULL_CI_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+          WAIT_SECONDS: ${{ inputs.wait-seconds }}
+        run: |
+          set -uo pipefail
+          mode=full
+          all_os=true
+          reason="$EVENT event: full CI"
+
+          release_files_only() {
+            local files
+            files=$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename') || return 1
+            [ -n "$files" ] || return 1
+            ! printf '%s\n' "$files" | grep -Evq '(^|/)(Cargo\.toml|Cargo\.lock|CHANGELOG\.md)$'
+          }
+
+          # Latest `local-ci` status on HEAD_SHA, ignoring statuses created by
+          # workflows (GITHUB_TOKEN) so CI can never attest itself. Creating a
+          # status requires write access to this repository.
+          local_ci_state() {
+            gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" \
+              --jq '[.[] | select(.context == "local-ci" and .creator.login != "github-actions[bot]")][0] | "\(.state) \(.creator.login) \(.description)"' 2>/dev/null | tr -d '\r' | tr '\n' ' '
+          }
+
+          if [ "$EVENT" = "pull_request" ]; then
+            all_os=false
+            reason="pull request: full CI on Linux, macOS/Windows only on main (label 'full-ci' to force)"
+            if [ "$FULL_CI_LABEL" = "true" ]; then
+              all_os=true
+              reason="pull request labelled full-ci: full CI on all OSes"
+            elif [ "$HEAD_REPO" != "$REPO" ]; then
+              reason="fork pull request: full CI on Linux, macOS/Windows only on main"
+            elif [[ "$PR_AUTHOR" == "genai-ci-bot[bot]" && ( "$HEAD_REF" == release-plz-* || "$HEAD_REF" == automated/release-plz/* ) ]] && release_files_only; then
+              mode=release
+              reason="release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md: heavy jobs skipped"
+            else
+              deadline=$((SECONDS + WAIT_SECONDS))
+              while :; do
+                status=$(local_ci_state || true)
+                state=${status%% *}
+                if [ "$state" = "success" ]; then
+                  mode=local-ci
+                  reason="local-ci attested ${HEAD_SHA}: ${status#* }"
+                  break
+                fi
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  break
+                fi
+                sleep 10
+              done
+            fi
+          fi
+
+          heavy=false
+          [ "$mode" = "full" ] && heavy=true
+          echo "mode=$mode heavy=$heavy all-os=$all_os"
+          echo "$reason"
+          echo "::notice title=CI mode $mode::$reason"
+          {
+            echo "mode=$mode"
+            echo "heavy=$heavy"
+            echo "all-os=$all_os"
+            echo "reason=$reason"
+          } >> "$GITHUB_OUTPUT"

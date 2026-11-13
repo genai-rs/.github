@@ -28,6 +28,7 @@ Inputs (all optional except `msrv`):
 | `run-doc`           | boolean | `true`                                               | Build docs with `RUSTDOCFLAGS=-D warnings`          |
 | `generated-crate`   | boolean | `false`                                              | Generated crate: skips semver-checks and coverage   |
 | `os-matrix`         | string  | `["ubuntu-latest","macos-latest","windows-latest"]`  | JSON array of runners for the test matrix           |
+| `local-ci-wait-seconds` | number | `60`                                            | How long the gate waits for a `local-ci` status     |
 
 Check names are stable for branch protection: `fmt`, `clippy (stable)`,
 `clippy (msrv)`, `test (ubuntu-latest, stable)`, `test (ubuntu-latest, msrv)`,
@@ -37,6 +38,63 @@ MSRV is bumped.
 Repo-specific jobs (feature-combination tests, live integration tests,
 public-API scripts, generator tests) stay in the calling repo's own
 workflow next to the `ci` job.
+
+## Cheap CI: local-ci attestation, release PRs, macOS/Windows on main
+
+A `gate` job (`ci / gate`) decides how much heavy work a commit needs:
+
+| Situation                                                                 | Mode       | Heavy jobs (clippy, test, doc, semver-checks, coverage, repo build/udeps/feature jobs) |
+| ------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| push to `main`, schedule, manual dispatch                                 | `full`     | all, on every OS                                                                     |
+| PR (incl. forks) without attestation                                      | `full`     | all on Linux; macOS/Windows entries skipped (label the PR `full-ci` to run them)     |
+| same-repo PR whose head commit has a `local-ci` = success status          | `local-ci` | skipped                                                                              |
+| release-plz PR (bot author, `release-plz-*` / `automated/release-plz/*`) touching only `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md` | `release` | skipped; `release-sanity` runs `cargo check` + `cargo package --no-verify` |
+
+Skipped jobs keep their matrix and skip at step level on an ubuntu runner, so
+every required check (e.g. `ci / test (macos-latest, msrv)`) is still reported
+with its usual name and a passing conclusion. `fmt`, cargo-audit, cargo-deny,
+gitleaks, Dependency Review, License Compliance and the cheap repo jobs always
+run. If the gate itself fails, everything runs (fail open).
+
+Repos gate their own heavy jobs with
+[`local-ci-gate.yml`](.github/workflows/local-ci-gate.yml) (same logic,
+outputs `mode`, `heavy`, `all-os`, `reason`; usage in its header).
+
+### Running local-ci
+
+From the root of a crate checkout, on a committed branch:
+
+```sh
+bash ../.github/scripts/local-ci.sh --push --rerun
+# without a local clone of genai-rs/.github:
+bash <(gh api repos/genai-rs/.github/contents/scripts/local-ci.sh -H 'Accept: application/vnd.github.raw') --push --rerun
+```
+
+[`scripts/local-ci.sh`](scripts/local-ci.sh) refuses a dirty tree, reads
+`msrv`, `features`, `run-doc`, `run-semver-checks` and `generated-crate` from
+the repo's `rust-ci.yml` call and runs on the host: `cargo fmt --check`,
+`clippy --all-targets -D warnings` and `cargo test` on stable and on the MSRV,
+`cargo doc --no-deps` with `RUSTDOCFLAGS=-D warnings`, `cargo semver-checks`
+(not for generated crates), the repo's `cargo +nightly udeps` command when a
+workflow runs it, and the repo's `.github/local-ci-extra.sh` (local equivalents
+of repo-specific jobs such as a release build or feature combinations). When
+all pass it posts the commit status `local-ci` = success (with what ran,
+toolchains and host) on HEAD; on failure it posts nothing and exits non-zero.
+
+- `--push` pushes the branch right before posting, so the PR's gate (which
+  waits up to 60 s for the status) sees it on the first run.
+- `--rerun` re-runs this commit's PR workflow runs that are still running or
+  failed, so they pick up the attestation.
+- `--no-post` only runs the checks.
+
+Needs `gh` (authenticated, write access to the repo), rustup with the MSRV
+toolchain (installed on demand) and nightly, `cargo-semver-checks` and
+`cargo-udeps`.
+
+What local-ci does not cover: it runs on one host (usually macOS arm64), so
+Linux/Windows-specific breakage and coverage are only caught by the full run on
+`main`; live integration tests are unaffected by the gate and keep running.
+Fork PRs and pushes to `main` always run the full CI.
 
 ## Reusable security workflow
 
