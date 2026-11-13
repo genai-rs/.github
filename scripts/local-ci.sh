@@ -17,6 +17,10 @@
 #      warnings; cargo semver-checks (non-generated crates); the repo's
 #      `cargo +nightly udeps` command if a workflow runs it; and the repo's
 #      `.github/local-ci-extra.sh` (equivalents of repo-specific jobs) if any;
+#      and, when the call sets wasm-clippy-args / wasm-test-args, the `wasm`
+#      job's clippy and wasm-bindgen-test runs if the host has the
+#      wasm32-unknown-unknown target, node and a wasm-bindgen-test-runner of
+#      Cargo.lock's wasm-bindgen version (else skipped, noted in the status);
 #   4. on success posts a commit status `local-ci` = success on HEAD's SHA.
 #      The `gate` job of rust-ci.yml / local-ci-gate.yml then skips the heavy
 #      jobs for same-repo PRs whose head is that SHA. Pushes to main always
@@ -85,8 +89,19 @@ CALLER=$(grep -l 'rust-ci.yml@' .github/workflows/*.yml 2>/dev/null | head -1 ||
 [ -n "$CALLER" ] || die "no workflow in .github/workflows calls genai-rs/.github rust-ci.yml"
 
 # Print the value of `<key>:` inside the `with:` block of the rust-ci.yml call.
+# A block scalar (`key: |`) prints one line per line of the block.
 ci_input() {
   awk -v key="$1" '
+    function indent(l) { match(l, /^[[:space:]]*/); return RLENGTH }
+    inblock {
+      if ($0 ~ /^[[:space:]]*$/) next
+      if (indent($0) <= keyindent) exit
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      print line
+      next
+    }
     /rust-ci\.yml@/ { injob = 1; next }
     injob && /^  [A-Za-z0-9_-]+:[[:space:]]*$/ { injob = 0 }
     injob {
@@ -96,6 +111,11 @@ ci_input() {
         val = substr(line, length(key) + 2)
         sub(/^[[:space:]]+/, "", val)
         sub(/[[:space:]]+#.*$/, "", val)
+        if (val ~ /^[|>][-+]?$/) {
+          inblock = 1
+          keyindent = indent($0)
+          next
+        }
         gsub(/^["\047]|["\047]$/, "", val)
         print val
         exit
@@ -110,6 +130,8 @@ FEATURES=${FEATURES:---all-features}
 RUN_DOC=$(ci_input run-doc)
 RUN_SEMVER=$(ci_input run-semver-checks)
 GENERATED=$(ci_input generated-crate)
+WASM_CLIPPY_ARGS=$(ci_input wasm-clippy-args)
+WASM_TEST_ARGS=$(ci_input wasm-test-args)
 [ -n "$MSRV" ] || die "could not read msrv from $CALLER"
 
 UDEPS_CMD=$(grep -ho 'cargo +nightly udeps.*' .github/workflows/*.yml 2>/dev/null | head -1 || true)
@@ -124,6 +146,24 @@ echo "features:  $FEATURES"
 echo "doc:       ${RUN_DOC:-true}   semver-checks: $([ "${RUN_SEMVER:-true}" != false ] && [ "${GENERATED:-false}" != true ] && echo true || echo false)"
 echo "udeps:     ${UDEPS_CMD:-no}"
 echo "extra:     $([ -f "$EXTRA" ] && echo "$EXTRA" || echo no)"
+echo "wasm:      $([ -n "$WASM_CLIPPY_ARGS$WASM_TEST_ARGS" ] && echo yes || echo no)"
+
+# The wasm job runs only if this host has the wasm32 target and a
+# wasm-bindgen-test-runner matching Cargo.lock's wasm-bindgen; otherwise it is
+# skipped (and the attestation says so).
+WASM_SKIP=
+if [ -n "$WASM_CLIPPY_ARGS$WASM_TEST_ARGS" ]; then
+  WASM_BINDGEN=$(awk '$0 == "name = \"wasm-bindgen\"" { getline; gsub(/"/, "", $3); print $3; exit }' Cargo.lock 2>/dev/null || true)
+  if ! rustup target list --toolchain stable --installed 2>/dev/null | grep -qx wasm32-unknown-unknown; then
+    WASM_SKIP="wasm32-unknown-unknown target not installed (rustup target add wasm32-unknown-unknown)"
+  elif ! command -v wasm-bindgen-test-runner >/dev/null; then
+    WASM_SKIP="wasm-bindgen-test-runner not found (cargo install wasm-bindgen-cli --version ${WASM_BINDGEN:-<Cargo.lock version>} --locked)"
+  elif ! command -v node >/dev/null; then
+    WASM_SKIP="node not found"
+  elif [ -n "$WASM_BINDGEN" ] && [ "$(wasm-bindgen-test-runner --version 2>/dev/null | awk '{print $2}')" != "$WASM_BINDGEN" ]; then
+    WASM_SKIP="wasm-bindgen-test-runner is not $WASM_BINDGEN (cargo install wasm-bindgen-cli --version $WASM_BINDGEN --locked)"
+  fi
+fi
 
 rustup toolchain list | grep -q "^$MSRV" || rustup toolchain install "$MSRV" --profile minimal -c clippy
 rustup component list --toolchain "$MSRV" --installed | grep -q '^clippy' || rustup component add clippy --toolchain "$MSRV"
@@ -161,6 +201,28 @@ step() {
   fi
   if [ -f "$EXTRA" ]; then
     step extra bash "$EXTRA"
+  fi
+  if [ -n "$WASM_CLIPPY_ARGS$WASM_TEST_ARGS" ]; then
+    if [ -n "$WASM_SKIP" ]; then
+      say "wasm: SKIPPED - $WASM_SKIP"
+      RAN+=("wasm-SKIPPED")
+    else
+      wasm_steps() {
+        local args
+        while IFS= read -r args; do
+          [ -n "${args//[[:space:]]/}" ] || continue
+          say "wasm clippy: $args"
+          cargo +stable clippy --target wasm32-unknown-unknown $args -- -D warnings || return 1
+        done <<<"$WASM_CLIPPY_ARGS"
+        while IFS= read -r args; do
+          [ -n "${args//[[:space:]]/}" ] || continue
+          say "wasm test: $args"
+          CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
+            cargo +stable test --target wasm32-unknown-unknown $args || return 1
+        done <<<"$WASM_TEST_ARGS"
+      }
+      step wasm wasm_steps
+    fi
   fi
 }
 

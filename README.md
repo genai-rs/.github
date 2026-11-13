@@ -29,11 +29,30 @@ Inputs (all optional except `msrv`):
 | `generated-crate`   | boolean | `false`                                              | Generated crate: skips semver-checks and coverage   |
 | `os-matrix`         | string  | `["ubuntu-latest","macos-latest","windows-latest"]`  | JSON array of runners for the test matrix           |
 | `local-ci-wait-seconds` | number | `60`                                            | How long the gate waits for a `local-ci` status     |
+| `wasm-clippy-args`  | string  | `""`                                                 | Lines of `cargo clippy --target wasm32-unknown-unknown <line> -- -D warnings` (`wasm` job) |
+| `wasm-test-args`    | string  | `""`                                                 | Lines of `cargo test --target wasm32-unknown-unknown <line>` run in Node.js with `wasm-bindgen-test-runner` (`wasm` job) |
 
 Check names are stable for branch protection: `fmt`, `clippy (stable)`,
 `clippy (msrv)`, `test (ubuntu-latest, stable)`, `test (ubuntu-latest, msrv)`,
 `doc`, `semver-checks`, `coverage`. The `msrv` label never changes when the
 MSRV is bumped.
+
+The opt-in `wasm` job (check `ci / wasm`) runs when `wasm-clippy-args` or
+`wasm-test-args` is set: it installs the `wasm32-unknown-unknown` target,
+`wasm-bindgen-cli` at the `wasm-bindgen` version in the caller's `Cargo.lock`
+and Node.js, then runs each line of each input, e.g.
+
+```yaml
+    with:
+      msrv: "1.88"
+      wasm-clippy-args: |
+        --no-default-features --lib --test wasm
+      wasm-test-args: |
+        --no-default-features --test wasm
+```
+
+It is a heavy job (skipped at step level under `local-ci`/`release`); it is
+not meant to be a required check.
 
 Repo-specific jobs (feature-combination tests, live integration tests,
 public-API scripts, generator tests) stay in the calling repo's own
@@ -80,7 +99,11 @@ the repo's `rust-ci.yml` call and runs on the host: `cargo fmt --check`,
 `cargo doc --no-deps` with `RUSTDOCFLAGS=-D warnings`, `cargo semver-checks`
 (not for generated crates), the repo's `cargo +nightly udeps` command when a
 workflow runs it, and the repo's `.github/local-ci-extra.sh` (local equivalents
-of repo-specific jobs such as a release build or feature combinations). When
+of repo-specific jobs such as a release build or feature combinations), and
+the `wasm` job's commands when the call sets `wasm-*-args` and the host has the
+`wasm32-unknown-unknown` target, `node` and a `wasm-bindgen-test-runner` of the
+`Cargo.lock` version (otherwise they are skipped with a message, and the
+status says `wasm-SKIPPED`). When
 all pass it posts the commit status `local-ci` = success (with what ran,
 toolchains and host) on HEAD; on failure it posts nothing and exits non-zero.
 
