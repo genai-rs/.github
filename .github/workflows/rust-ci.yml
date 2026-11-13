@@ -121,8 +121,13 @@ jobs:
           # workflows (GITHUB_TOKEN) so CI can never attest itself. Creating a
           # status requires write access to this repository.
           local_ci_state() {
-            gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" \
-              --jq '[.[] | select(.context == "local-ci" and .creator.login != "github-actions[bot]")][0] | "\(.state) \(.creator.login) \(.description)"' 2>/dev/null | tr -d '\r' | tr '\n' ' '
+            local out
+            if ! out=$(gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" \
+              --jq '[.[] | select(.context == "local-ci" and .creator.login != "github-actions[bot]")][0] | "\(.state) \(.creator.login) \(.description)"' 2>&1); then
+              echo "::warning::cannot read commit statuses: $out" >&2
+              return 1
+            fi
+            printf '%s' "$out" | tr -d '\r' | tr '\n' ' '
           }
 
           if [ "$EVENT" = "pull_request" ]; then
