@@ -13,6 +13,18 @@
 #   doc, semver-checks, coverage.
 # The msrv entries resolve to `inputs.msrv` at run time; the check name stays
 # "msrv" so bumping the MSRV never breaks branch protection.
+#
+# The `gate` job decides how much heavy work a commit needs (see
+# local-ci-gate.yml, whose logic it mirrors):
+#   full      push to main, fork PRs, PRs without attestation: everything runs,
+#             except that on PRs the non-Linux test entries are skipped
+#             (macOS/Windows run on main, or on PRs labelled `full-ci`);
+#   local-ci  same-repo PR whose head commit carries a successful `local-ci`
+#             commit status (posted by scripts/local-ci.sh): heavy jobs skip;
+#   release   release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md:
+#             heavy jobs skip, `release-sanity` runs cargo check + package.
+# Heavy jobs skip at step level, so every matrix entry still reports its
+# expanded check name with a passing conclusion, on an ubuntu runner.
 name: Rust CI
 
 on:
@@ -52,6 +64,11 @@ on:
         required: false
         type: string
         default: '["ubuntu-latest","macos-latest","windows-latest"]'
+      local-ci-wait-seconds:
+        description: How long the gate waits for a `local-ci` commit status on same-repo PRs
+        required: false
+        type: number
+        default: 60
 
 permissions:
   contents: read
@@ -64,6 +81,91 @@ env:
   RUSTUP_MAX_RETRIES: 10
 
 jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.gate.outputs.mode }}
+      heavy: ${{ steps.gate.outputs.heavy }}
+      all-os: ${{ steps.gate.outputs.all-os }}
+      reason: ${{ steps.gate.outputs.reason }}
+    steps:
+      - name: Decide CI mode
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          FULL_CI_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'full-ci') }}
+          WAIT_SECONDS: ${{ inputs.local-ci-wait-seconds }}
+        run: |
+          set -uo pipefail
+          mode=full
+          all_os=true
+          reason="$EVENT event: full CI"
+
+          release_files_only() {
+            local files
+            files=$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename') || return 1
+            [ -n "$files" ] || return 1
+            ! printf '%s\n' "$files" | grep -Evq '(^|/)(Cargo\.toml|Cargo\.lock|CHANGELOG\.md)$'
+          }
+
+          # Latest `local-ci` status on HEAD_SHA, ignoring statuses created by
+          # workflows (GITHUB_TOKEN) so CI can never attest itself. Creating a
+          # status requires write access to this repository.
+          local_ci_state() {
+            gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" \
+              --jq '[.[] | select(.context == "local-ci" and .creator.login != "github-actions[bot]")][0] | "\(.state) \(.creator.login) \(.description)"' 2>/dev/null | tr -d '\r' | tr '\n' ' '
+          }
+
+          if [ "$EVENT" = "pull_request" ]; then
+            all_os=false
+            reason="pull request: full CI on Linux, macOS/Windows only on main (label 'full-ci' to force)"
+            if [ "$FULL_CI_LABEL" = "true" ]; then
+              all_os=true
+              reason="pull request labelled full-ci: full CI on all OSes"
+            elif [ "$HEAD_REPO" != "$REPO" ]; then
+              reason="fork pull request: full CI on Linux, macOS/Windows only on main"
+            elif [[ "$PR_AUTHOR" == "genai-ci-bot[bot]" && ( "$HEAD_REF" == release-plz-* || "$HEAD_REF" == automated/release-plz/* ) ]] && release_files_only; then
+              mode=release
+              reason="release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md: heavy jobs skipped"
+            else
+              deadline=$((SECONDS + WAIT_SECONDS))
+              while :; do
+                status=$(local_ci_state || true)
+                state=${status%% *}
+                if [ "$state" = "success" ]; then
+                  mode=local-ci
+                  reason="local-ci attested ${HEAD_SHA}: ${status#* }"
+                  break
+                fi
+                if [ "$SECONDS" -ge "$deadline" ]; then
+                  break
+                fi
+                sleep 10
+              done
+            fi
+          fi
+
+          heavy=false
+          [ "$mode" = "full" ] && heavy=true
+          echo "mode=$mode heavy=$heavy all-os=$all_os"
+          echo "$reason"
+          echo "::notice title=CI mode $mode::$reason"
+          {
+            echo "mode=$mode"
+            echo "heavy=$heavy"
+            echo "all-os=$all_os"
+            echo "reason=$reason"
+          } >> "$GITHUB_OUTPUT"
+
   fmt:
     name: fmt
     runs-on: ubuntu-latest
@@ -80,86 +182,141 @@ jobs:
 
   clippy:
     name: clippy (${{ matrix.toolchain }})
+    needs: gate
+    # Run (fail-open) even if the gate job itself failed.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      RUN: ${{ needs.gate.outputs.heavy != 'false' }}
     strategy:
       fail-fast: false
       matrix:
         toolchain: [stable, msrv]
     steps:
+      - name: Skip (${{ needs.gate.outputs.mode }})
+        if: env.RUN != 'true'
+        env:
+          REASON: ${{ needs.gate.outputs.reason }}
+        run: echo "Skipped - $REASON"
       - name: Checkout repository
+        if: env.RUN == 'true'
         uses: actions/checkout@v7
       - name: Install Rust
+        if: env.RUN == 'true'
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain == 'msrv' && inputs.msrv || 'stable' }}
           components: clippy
       - name: Cache dependencies
+        if: env.RUN == 'true'
         uses: Swatinem/rust-cache@v2
         with:
           cache-all-crates: true
       - name: Run clippy
+        if: env.RUN == 'true'
         run: cargo clippy --all-targets ${{ inputs.features }} -- -D warnings
 
   test:
     name: test (${{ matrix.os }}, ${{ matrix.toolchain }})
-    runs-on: ${{ matrix.os }}
+    needs: gate
+    if: ${{ !cancelled() }}
+    # Skipped entries run their no-op on ubuntu, so they never wait for a
+    # macOS/Windows runner.
+    runs-on: ${{ (needs.gate.outputs.heavy != 'false' && (startsWith(matrix.os, 'ubuntu') || needs.gate.outputs.all-os != 'false')) && matrix.os || 'ubuntu-latest' }}
     timeout-minutes: 30
+    env:
+      RUN: ${{ needs.gate.outputs.heavy != 'false' && (startsWith(matrix.os, 'ubuntu') || needs.gate.outputs.all-os != 'false') }}
     strategy:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(inputs.os-matrix) }}
         toolchain: [stable, msrv]
     steps:
+      - name: Skip (${{ needs.gate.outputs.mode }})
+        if: env.RUN != 'true'
+        env:
+          REASON: ${{ needs.gate.outputs.reason }}
+        run: echo "Skipped - $REASON"
       - name: Checkout repository
+        if: env.RUN == 'true'
         uses: actions/checkout@v7
       - name: Install Rust
+        if: env.RUN == 'true'
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain == 'msrv' && inputs.msrv || 'stable' }}
       - name: Cache dependencies
+        if: env.RUN == 'true'
         uses: Swatinem/rust-cache@v2
         with:
           cache-all-crates: true
       - name: Build
+        if: env.RUN == 'true'
         run: cargo build --verbose ${{ inputs.features }}
       # `cargo test` also compiles examples and runs doc tests.
       - name: Run tests
+        if: env.RUN == 'true'
         run: cargo test --verbose ${{ inputs.features }}
 
   doc:
     name: doc
-    if: inputs.run-doc
+    needs: gate
+    if: ${{ !cancelled() && inputs.run-doc }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      RUN: ${{ needs.gate.outputs.heavy != 'false' }}
     steps:
+      - name: Skip (${{ needs.gate.outputs.mode }})
+        if: env.RUN != 'true'
+        env:
+          REASON: ${{ needs.gate.outputs.reason }}
+        run: echo "Skipped - $REASON"
       - name: Checkout repository
+        if: env.RUN == 'true'
         uses: actions/checkout@v7
       - name: Install Rust
+        if: env.RUN == 'true'
         uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
+        if: env.RUN == 'true'
         uses: Swatinem/rust-cache@v2
       - name: Build documentation
+        if: env.RUN == 'true'
         run: cargo doc --no-deps ${{ inputs.features }}
         env:
           RUSTDOCFLAGS: -D warnings
 
   semver-checks:
     name: semver-checks
-    if: inputs.run-semver-checks && !inputs.generated-crate
+    needs: gate
+    if: ${{ !cancelled() && inputs.run-semver-checks && !inputs.generated-crate }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RUN: ${{ needs.gate.outputs.heavy != 'false' }}
     steps:
+      - name: Skip (${{ needs.gate.outputs.mode }})
+        if: env.RUN != 'true'
+        env:
+          REASON: ${{ needs.gate.outputs.reason }}
+        run: echo "Skipped - $REASON"
       - name: Checkout repository
+        if: env.RUN == 'true'
         uses: actions/checkout@v7
       - name: Install Rust
+        if: env.RUN == 'true'
         uses: dtolnay/rust-toolchain@stable
       - name: Check semver compatibility
+        if: env.RUN == 'true'
         uses: obi1kenobi/cargo-semver-checks-action@v2
 
   coverage:
     name: coverage
-    if: inputs.run-coverage && !inputs.generated-crate
+    needs: gate
+    # Not a required check: skipped entirely when the gate skips heavy work.
+    if: ${{ !cancelled() && inputs.run-coverage && !inputs.generated-crate && needs.gate.outputs.heavy != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Informational only: never block a merge on coverage tooling.
@@ -187,3 +344,21 @@ jobs:
           files: lcov.info
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  release-sanity:
+    name: release-sanity
+    needs: gate
+    if: needs.gate.outputs.mode == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: cargo check
+        run: cargo check --all-targets ${{ inputs.features }}
+      - name: cargo package (dry run)
+        run: cargo package --no-verify --allow-dirty
