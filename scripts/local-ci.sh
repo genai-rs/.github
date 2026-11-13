@@ -3,7 +3,8 @@
 #
 # Usage (from the root of any genai-rs crate checkout):
 #
-#   bash ../.github/scripts/local-ci.sh [--push] [--rerun] [--no-post]
+#   bash ../.github/scripts/local-ci.sh --push    # new, unpushed commit
+#   bash ../.github/scripts/local-ci.sh --rerun   # commit already pushed
 #   # or without a local clone of genai-rs/.github:
 #   bash <(gh api repos/genai-rs/.github/contents/scripts/local-ci.sh -H 'Accept: application/vnd.github.raw') --push
 #
@@ -25,8 +26,8 @@
 #   --push     push the current branch to origin after the checks pass and
 #              right before posting the status (CI's gate waits ~60 s for it)
 #   --rerun    after posting, re-run this SHA's pull_request workflow runs that
-#              are still running (cancelled first) or failed, so they pick up
-#              the attestation
+#              have a gate job and are still running (cancelled first) or
+#              failed, so they pick up the attestation (ignored with --push)
 #   --no-post  run the checks only; do not post a status
 set -euo pipefail
 
@@ -182,7 +183,10 @@ fi
 
 if [ "$PUSH" = 1 ]; then
   say "pushing $BRANCH"
-  git push origin "HEAD:refs/heads/$BRANCH"
+  # gh's credential (https remotes) carries the `workflow` scope needed to
+  # push workflow changes; ssh remotes ignore the helper.
+  git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
+    push origin "HEAD:refs/heads/$BRANCH"
 fi
 sha_on_origin || die "$SHA is not on github.com/$REPO; push it and re-run"
 
@@ -190,12 +194,19 @@ gh api -X POST "repos/$REPO/statuses/$SHA" \
   -f state=success -f context=local-ci -f description="$DESC" --silent
 say "posted local-ci=success on $REPO@$SHA"
 
-if [ "$RERUN" = 1 ]; then
+if [ "$RERUN" = 1 ] && [ "$PUSH" = 1 ]; then
+  echo "--rerun ignored with --push: the runs for the new push see the status"
+elif [ "$RERUN" = 1 ]; then
   sleep 5
   gh run list -R "$REPO" --commit "$SHA" --event pull_request \
     --json databaseId,status,conclusion,workflowName \
     -q '.[] | select(.status != "completed" or (.conclusion != "success" and .conclusion != "skipped")) | "\(.databaseId) \(.status) \(.workflowName)"' |
     while read -r id status name; do
+      # Only runs with a local-ci gate benefit from a re-run (e.g. not Security).
+      if ! gh run view -R "$REPO" "$id" --json jobs -q '.jobs[].name' | grep -Eq '(^|/ )gate($| /)'; then
+        echo "skipping $name ($id): no gate job"
+        continue
+      fi
       if [ "$status" != completed ]; then
         echo "cancelling $name ($id)"
         gh run cancel -R "$REPO" "$id" >/dev/null || true

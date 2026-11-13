@@ -65,9 +65,12 @@ outputs `mode`, `heavy`, `all-os`, `reason`; usage in its header).
 From the root of a crate checkout, on a committed branch:
 
 ```sh
-bash ../.github/scripts/local-ci.sh --push --rerun
+# commit not pushed yet: check, then push and attest
+bash ../.github/scripts/local-ci.sh --push
+# commit already pushed (CI already running): attest and re-run the gated runs
+bash ../.github/scripts/local-ci.sh --rerun
 # without a local clone of genai-rs/.github:
-bash <(gh api repos/genai-rs/.github/contents/scripts/local-ci.sh -H 'Accept: application/vnd.github.raw') --push --rerun
+bash <(gh api repos/genai-rs/.github/contents/scripts/local-ci.sh -H 'Accept: application/vnd.github.raw') --push
 ```
 
 [`scripts/local-ci.sh`](scripts/local-ci.sh) refuses a dirty tree, reads
@@ -83,7 +86,8 @@ toolchains and host) on HEAD; on failure it posts nothing and exits non-zero.
 
 - `--push` pushes the branch right before posting, so the PR's gate (which
   waits up to 60 s for the status) sees it on the first run.
-- `--rerun` re-runs this commit's PR workflow runs that are still running or
+- `--rerun` (for a commit that was already pushed) cancels and re-runs this
+  commit's PR workflow runs that have a gate job and are still running or
   failed, so they pick up the attestation.
 - `--no-post` only runs the checks.
 
