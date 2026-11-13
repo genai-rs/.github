@@ -10,7 +10,8 @@
 #
 # Job names are stable so they can be used as required status checks:
 #   fmt, clippy (stable), clippy (msrv), test (<os>, stable), test (<os>, msrv),
-#   doc, semver-checks, coverage.
+#   doc, semver-checks, coverage, and `wasm` when `wasm-test-args` or
+#   `wasm-clippy-args` is set (opt-in; not meant to be a required check).
 # The msrv entries resolve to `inputs.msrv` at run time; the check name stays
 # "msrv" so bumping the MSRV never breaks branch protection.
 #
@@ -64,6 +65,23 @@ on:
         required: false
         type: string
         default: '["ubuntu-latest","macos-latest","windows-latest"]'
+      wasm-clippy-args:
+        description: >-
+          Clippy runs for wasm32-unknown-unknown, one per line, each line being the
+          arguments of `cargo clippy --target wasm32-unknown-unknown <line> -- -D warnings`
+          (e.g. "--no-default-features --lib --test wasm"). Empty (default): none.
+        required: false
+        type: string
+        default: ""
+      wasm-test-args:
+        description: >-
+          wasm-bindgen-test runs in Node.js, one per line, each line being the arguments of
+          `cargo test --target wasm32-unknown-unknown <line>` with wasm-bindgen-test-runner
+          as the runner (e.g. "--no-default-features --test wasm"). wasm-bindgen-cli is
+          installed at the `wasm-bindgen` version in Cargo.lock. Empty (default): none.
+        required: false
+        type: string
+        default: ""
       local-ci-wait-seconds:
         description: How long the gate waits for a `local-ci` commit status on same-repo PRs
         required: false
@@ -349,6 +367,84 @@ jobs:
           files: lcov.info
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  # Opt-in WebAssembly job: clippy and wasm-bindgen-test (Node.js) for
+  # wasm32-unknown-unknown. Heavy: skipped at step level when the gate says so
+  # (local-ci attestation runs the same commands when the host has the tools).
+  wasm:
+    name: wasm
+    needs: gate
+    if: ${{ !cancelled() && (inputs.wasm-clippy-args != '' || inputs.wasm-test-args != '') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RUN: ${{ needs.gate.outputs.heavy != 'false' }}
+      WASM_CLIPPY_ARGS: ${{ inputs.wasm-clippy-args }}
+      WASM_TEST_ARGS: ${{ inputs.wasm-test-args }}
+    steps:
+      - name: Skip (${{ needs.gate.outputs.mode }})
+        if: env.RUN != 'true'
+        env:
+          REASON: ${{ needs.gate.outputs.reason }}
+        run: echo "Skipped - $REASON"
+      - name: Checkout repository
+        if: env.RUN == 'true'
+        uses: actions/checkout@v7
+      - name: Install Rust
+        if: env.RUN == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+      - name: Cache dependencies
+        if: env.RUN == 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm
+      - name: Read wasm-bindgen version from Cargo.lock
+        if: env.RUN == 'true'
+        id: wasm-bindgen
+        run: |
+          set -euo pipefail
+          [ -f Cargo.lock ] || cargo generate-lockfile
+          version=$(awk '$0 == "name = \"wasm-bindgen\"" { getline; gsub(/"/, "", $3); print $3; exit }' Cargo.lock)
+          [ -n "$version" ] || { echo "::error::no wasm-bindgen in Cargo.lock"; exit 1; }
+          echo "wasm-bindgen $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Install wasm-bindgen-cli
+        if: env.RUN == 'true'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@${{ steps.wasm-bindgen.outputs.version }}
+      - name: Set up Node.js
+        if: env.RUN == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - name: Run clippy (wasm32)
+        if: env.RUN == 'true' && env.WASM_CLIPPY_ARGS != ''
+        run: |
+          set -euo pipefail
+          while IFS= read -r args; do
+            [ -n "${args//[[:space:]]/}" ] || continue
+            echo "::group::cargo clippy --target wasm32-unknown-unknown $args -- -D warnings"
+            # shellcheck disable=SC2086 # args is a list of flags
+            cargo clippy --target wasm32-unknown-unknown $args -- -D warnings
+            echo "::endgroup::"
+          done <<< "$WASM_CLIPPY_ARGS"
+      - name: Run tests (wasm32, Node.js)
+        if: env.RUN == 'true' && env.WASM_TEST_ARGS != ''
+        env:
+          CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
+        run: |
+          set -euo pipefail
+          while IFS= read -r args; do
+            [ -n "${args//[[:space:]]/}" ] || continue
+            echo "::group::cargo test --target wasm32-unknown-unknown $args"
+            # shellcheck disable=SC2086 # args is a list of flags
+            cargo test --target wasm32-unknown-unknown $args
+            echo "::endgroup::"
+          done <<< "$WASM_TEST_ARGS"
 
   release-sanity:
     name: release-sanity
