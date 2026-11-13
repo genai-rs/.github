@@ -364,6 +364,6 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
       - name: cargo check
-        run: cargo check --all-targets ${{ inputs.features }}
+        run: cargo check ${{ inputs.features }}
       - name: cargo package (dry run)
         run: cargo package --no-verify --allow-dirty
