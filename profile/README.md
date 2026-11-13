@@ -4,13 +4,13 @@ Rust libraries for the OpenAI API and for Langfuse observability.
 
 ## Choose a starting point
 
-- **Call OpenAI (or an OpenAI-compatible API):** start with [openai-ergonomic](https://github.com/genai-rs/openai-ergonomic): builders, streaming, interceptors (including Langfuse/OpenTelemetry), a tool framework, provider presets (OpenAI, Azure OpenAI, OpenRouter, Groq, Ollama or a custom endpoint), pluggable authentication (`AuthProvider`), webhook verification, large-file uploads and WebAssembly support. It is still pre-1.0 and its API keeps changing; a first-class Responses API client and an agent loop are planned. Use [openai-client-base](https://github.com/genai-rs/openai-client-base) when you want the generated API surface directly or are building your own abstraction.
+- **Call OpenAI (or an OpenAI-compatible API):** start with [openai-ergonomic](https://github.com/genai-rs/openai-ergonomic): builders, streaming, interceptors (including Langfuse/OpenTelemetry), a tool framework, provider presets (OpenAI, Azure OpenAI, OpenRouter, Groq, Ollama or a custom endpoint), pluggable authentication (`AuthProvider`), webhook verification, large-file uploads and WebAssembly support. Use [openai-client-base](https://github.com/genai-rs/openai-client-base) when you want the generated API surface directly or are building your own abstraction.
 - **Use the Langfuse API:** choose [langfuse-ergonomic](https://github.com/genai-rs/langfuse-ergonomic) for builders, batching (also on WebAssembly), prompts, datasets and scores, against Langfuse v3 or v4 servers. Use [langfuse-client-base](https://github.com/genai-rs/langfuse-client-base) for the generated bindings.
 - **Export OpenTelemetry spans to Langfuse:** choose [opentelemetry-langfuse](https://github.com/genai-rs/opentelemetry-langfuse). It configures the OTLP exporter and Langfuse context and needs no Langfuse API client at runtime. Use the same OpenTelemetry release family as the exporter (see its `Cargo.toml`).
 
 ## Crates
 
-All crates are pre-1.0 and dual-licensed MIT or Apache-2.0. Badges show the current published state.
+All crates are dual-licensed MIT or Apache-2.0. Badges show the current published state.
 
 | Crate | Purpose | crates.io | docs.rs | MSRV | Dependencies | CI |
 | --- | --- | --- | --- | --- | --- | --- |
