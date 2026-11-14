@@ -14,11 +14,6 @@ in directories being edited, before work; follow those instructions and the
 explicit task authorization. Surface conflicts for review rather than silently
 choosing a different compatibility policy.
 
-For Tim's managed environment, also read `/Users/tim/.codex/RTK.md`. Prefix every
-shell command with `rtk`; use `rtk proxy <command>` when a command needs unfiltered
-output or lacks a dedicated wrapper. The examples below use that convention.
-If RTK is required but unavailable, report the environment blocker.
-
 ## Delivery steps
 
 1. **Read and claim.** Read the current Kata body, comments, owner, and predecessor
@@ -53,7 +48,7 @@ If RTK is required but unavailable, report the environment blocker.
    dependency or unavailable tool from a product failure. Do not weaken tests to
    make the change pass. Run repository-required checks too; record any unavailable
    checks as limitations, never as passing. In a parallel worker wave, limit Cargo
-   to two jobs, for example `rtk proxy env CARGO_BUILD_JOBS=2 cargo test --offline
+   to two jobs, for example `env CARGO_BUILD_JOBS=2 cargo test --offline
    --locked <focused-filter>` after replacing the filter with the actual target.
 5. **Open one focused PR.** Review the diff for unintended generated changes,
    credentials, refactoring, or dependency upgrades. Push one branch and create
@@ -105,7 +100,7 @@ Repository: <owner/repository and URL>
 Base branch / refreshed base SHA: <branch> / <full SHA>
 Existing GitHub issue or PR: <URL or none>
 Predecessor IDs and verified state: <project#id: closed + evidence, or none>
-Instructions read: <applicable AGENTS.md paths, RTK.md, local policies>
+Instructions read: <applicable AGENTS.md paths, local policies>
 Isolated checkout / working directory: <absolute path>
 Problem and reproduction: <trigger, exact command, actual vs expected result>
 Allowed files: <explicit paths; include regenerated outputs if required>
@@ -114,7 +109,7 @@ Compatibility policy and schema provenance: <local policy/source revision, or no
 Acceptance criteria:
 - <observable result>
 Exact tests and checks:
-- <cwd; rtk command; prerequisites; expected result>
+- <cwd; command; prerequisites; expected result>
 - <required CI job and how its result is verified>
 Non-goals: <excluded APIs, files, refactors, upgrades, live tests>
 Authority: <implementation owner, independent reviewer, merge/release authority>
@@ -138,12 +133,12 @@ workspace or use a qualified reference such as `genai-rs#d3ke`. Check installed
 help again when upgrading Kata; do not assume another tracker has these flags.
 
 ```sh
-rtk proxy kata --help
-rtk proxy kata show "$TASK" --json
-rtk proxy kata --as "$ACTOR" claim "$TASK" --if-unowned
-rtk proxy kata --as "$ACTOR" meta set "$TASK" worker_thread_id "$CHAT_ID" --if-absent
-rtk proxy kata --as "$ACTOR" comment "$TASK" --body-file handoff.md
-rtk proxy kata --as "$ACTOR" label add "$TASK" needs-review
+kata --help
+kata show "$TASK" --json
+kata --as "$ACTOR" claim "$TASK" --if-unowned
+kata --as "$ACTOR" meta set "$TASK" worker_thread_id "$CHAT_ID" --if-absent
+kata --as "$ACTOR" comment "$TASK" --body-file handoff.md
+kata --as "$ACTOR" label add "$TASK" needs-review
 ```
 
 Read back the owner after a claim and resolve a mismatch before editing. An
@@ -157,7 +152,7 @@ The following is for the authorized accepting actor **only after** completion
 has been verified, not for the worker creating a draft PR:
 
 ```sh
-rtk proxy kata --as "$ACTOR" close "$TASK" --reason done \
+kata --as "$ACTOR" close "$TASK" --reason done \
   --message "<substantive scope, acceptance, merge and check results>" \
   --evidence "commit:<full SHA>" \
   --evidence "pr:<PR URL>" \
@@ -168,4 +163,4 @@ rtk proxy kata --as "$ACTOR" close "$TASK" --reason done \
 Inspect the dry-run result, then omit `--dry-run` only when authorized and all
 completion criteria are met. For an accepted review/design artifact, replace
 inapplicable PR/commit evidence with truthful supported evidence; never invent a
-merge, test, or artifact. Review `rtk proxy kata close --help` for supported types.
+merge, test, or artifact. Review `kata close --help` for supported types.

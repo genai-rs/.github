@@ -30,7 +30,7 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
    Compiling itoa v1.0.18
    Compiling memchr v2.8.3
    Compiling bon v3.10.2
-   Compiling gen01-baseline-probe v0.0.0 (/Users/tim/Documents/Codex/2026-10-17/genai-rs-gen01/work/probe-locked/baseline-probe)
+   Compiling gen01-baseline-probe v0.0.0 (work/probe-locked/baseline-probe)
 warning: associated function `new` is never used
   --> src/baseline_model.rs:33:12
    |

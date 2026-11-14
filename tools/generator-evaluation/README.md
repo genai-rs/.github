@@ -54,21 +54,21 @@ intentionally permitted and are not schema fallbacks.
 
 ## Reproduce the bounded baseline
 
-Requires Python 3.11+, uv, Rust/Cargo, git, curl and RTK. `evaluate.py` pins its
+Requires Python 3.11+, uv, Rust/Cargo, git, and curl. `evaluate.py` pins its
 Python dependencies. Run these commands from the repository root. Choose a fresh
 disposable directory for each run; the probe refuses to overwrite an old crate.
 No upstream checkout is modified.
 
 ```sh
-rtk proxy mkdir -p work/gen01/upstream
-rtk git clone https://github.com/genai-rs/openai-client-base.git work/gen01/openai
-rtk git -C work/gen01/openai checkout 806bd82935d1455f1dde6551d37e26291b35f2f4
-rtk proxy curl --fail --location --retry 2 https://raw.githubusercontent.com/openai/openai-openapi/main/openapi.yaml --output work/gen01/upstream/openai.yaml
-rtk proxy curl --fail --location --retry 2 https://cloud.langfuse.com/generated/api/openapi.yml --output work/gen01/upstream/langfuse.yaml
-rtk proxy uv run tools/generator-evaluation/evaluate.py validate
-rtk proxy uv run tools/generator-evaluation/evaluate.py snapshots work/gen01/upstream work/gen01/upstream-manifest.json
-rtk proxy uv run tools/generator-evaluation/evaluate.py baseline --baseline work/gen01/openai --snapshots work/gen01/upstream --work work/gen01/run-1 --output work/gen01/results
-rtk proxy uv run tools/generator-evaluation/evaluate.py validate-result work/gen01/results/baseline.json
+mkdir -p work/gen01/upstream
+git clone https://github.com/genai-rs/openai-client-base.git work/gen01/openai
+git -C work/gen01/openai checkout 806bd82935d1455f1dde6551d37e26291b35f2f4
+curl --fail --location --retry 2 https://raw.githubusercontent.com/openai/openai-openapi/main/openapi.yaml --output work/gen01/upstream/openai.yaml
+curl --fail --location --retry 2 https://cloud.langfuse.com/generated/api/openapi.yml --output work/gen01/upstream/langfuse.yaml
+uv run tools/generator-evaluation/evaluate.py validate
+uv run tools/generator-evaluation/evaluate.py snapshots work/gen01/upstream work/gen01/upstream-manifest.json
+uv run tools/generator-evaluation/evaluate.py baseline --baseline work/gen01/openai --snapshots work/gen01/upstream --work work/gen01/run-1 --output work/gen01/results
+uv run tools/generator-evaluation/evaluate.py validate-result work/gen01/results/baseline.json
 ```
 
 The pinned checkout reproduces the sampled module; refresh remote HEAD and record
@@ -102,15 +102,15 @@ For example, this runs the two current generator versions on the same fixture
 in fresh directories. It is a comparison recipe, not a claim these runs passed:
 
 ```sh
-rtk proxy mkdir -p work/gen01/7.15.0 work/gen01/7.25.0
-rtk proxy docker pull openapitools/openapi-generator-cli:v7.15.0
-rtk proxy docker pull openapitools/openapi-generator-cli:v7.25.0
-rtk proxy docker image inspect openapitools/openapi-generator-cli:v7.15.0 --format '{{json .RepoDigests}}'
-rtk proxy docker image inspect openapitools/openapi-generator-cli:v7.25.0 --format '{{json .RepoDigests}}'
-rtk proxy docker run --rm -v "$PWD:/local" openapitools/openapi-generator-cli:v7.15.0 generate -i /local/tools/generator-evaluation/fixtures/openapi-3.1.0.json -g rust -o /local/work/gen01/7.15.0 --additional-properties=packageName=gen01,library=reqwest,supportAsync=true,supportMiddleware=true,preferUnsignedInt=false,useSingleRequestParameter=false
-rtk proxy docker run --rm -v "$PWD:/local" openapitools/openapi-generator-cli:v7.25.0 generate -i /local/tools/generator-evaluation/fixtures/openapi-3.1.0.json -g rust -o /local/work/gen01/7.25.0 --additional-properties=packageName=gen01,library=reqwest,supportAsync=true,supportMiddleware=true,preferUnsignedInt=false,useSingleRequestParameter=false
-rtk proxy env CARGO_BUILD_JOBS=2 cargo check --manifest-path work/gen01/7.15.0/Cargo.toml
-rtk proxy env CARGO_BUILD_JOBS=2 cargo check --manifest-path work/gen01/7.25.0/Cargo.toml
+mkdir -p work/gen01/7.15.0 work/gen01/7.25.0
+docker pull openapitools/openapi-generator-cli:v7.15.0
+docker pull openapitools/openapi-generator-cli:v7.25.0
+docker image inspect openapitools/openapi-generator-cli:v7.15.0 --format '{{json .RepoDigests}}'
+docker image inspect openapitools/openapi-generator-cli:v7.25.0 --format '{{json .RepoDigests}}'
+docker run --rm -v "$PWD:/local" openapitools/openapi-generator-cli:v7.15.0 generate -i /local/tools/generator-evaluation/fixtures/openapi-3.1.0.json -g rust -o /local/work/gen01/7.15.0 --additional-properties=packageName=gen01,library=reqwest,supportAsync=true,supportMiddleware=true,preferUnsignedInt=false,useSingleRequestParameter=false
+docker run --rm -v "$PWD:/local" openapitools/openapi-generator-cli:v7.25.0 generate -i /local/tools/generator-evaluation/fixtures/openapi-3.1.0.json -g rust -o /local/work/gen01/7.25.0 --additional-properties=packageName=gen01,library=reqwest,supportAsync=true,supportMiddleware=true,preferUnsignedInt=false,useSingleRequestParameter=false
+env CARGO_BUILD_JOBS=2 cargo check --manifest-path work/gen01/7.15.0/Cargo.toml
+env CARGO_BUILD_JOBS=2 cargo check --manifest-path work/gen01/7.25.0/Cargo.toml
 ```
 
 Repeat with 3.0.1 in new output directories. Then run each candidate-specific
