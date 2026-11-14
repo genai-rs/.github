@@ -42,7 +42,7 @@ def write(path, value):
 
 
 def run(args, **kwargs):
-    return subprocess.run(["rtk", "proxy", *args], capture_output=True, **kwargs)
+    return subprocess.run(list(args), capture_output=True, **kwargs)
 
 
 def nullable_to_jsonschema(value):
@@ -219,8 +219,8 @@ mod tests {
         "format_version": 1,
         "run": {"utc": datetime.datetime.now(datetime.timezone.utc).isoformat(), "platform": platform.platform(),
                 "rustc": run(["rustc", "--version"], check=True).stdout.decode().strip(),
-                "commands": ["rtk proxy env CARGO_BUILD_JOBS=2 " + " ".join(command),
-                             "rtk proxy env CARGO_BUILD_JOBS=2 GEN01_INJECT_WRONG_WIRE=1 " + " ".join(negative_command)]},
+                "commands": ["env CARGO_BUILD_JOBS=2 " + " ".join(command),
+                             "env CARGO_BUILD_JOBS=2 GEN01_INJECT_WRONG_WIRE=1 " + " ".join(negative_command)]},
         "candidate": {"name": "openai-client-base current checked-in model sample", "repository": "https://github.com/genai-rs/openai-client-base",
                       "revision": revision, "generator_version": version.group(1).decode(), "generator_revision": None,
                       "configuration": {"source": MODEL, "generation_script_sha256": sha(generator), "generation_rerun": False, "patches": "existing repository pipeline; not executed here"},

@@ -50,10 +50,10 @@ report's outcome.
 Run from the worker workspace (repository-local replay commands are in README):
 
 ```sh
-rtk proxy uv run work/github/tools/generator-evaluation/evaluate.py validate
-rtk proxy uv run work/github/tools/generator-evaluation/evaluate.py baseline --baseline work/openai-baseline --snapshots work/upstream --work work/probe-locked --output work/github/tools/generator-evaluation/results
-rtk proxy uv run work/github/tools/generator-evaluation/evaluate.py validate-result work/github/tools/generator-evaluation/results/baseline.json
-rtk git -C work/github diff --check
+uv run work/github/tools/generator-evaluation/evaluate.py validate
+uv run work/github/tools/generator-evaluation/evaluate.py baseline --baseline work/openai-baseline --snapshots work/upstream --work work/probe-locked --output work/github/tools/generator-evaluation/results
+uv run work/github/tools/generator-evaluation/evaluate.py validate-result work/github/tools/generator-evaluation/results/baseline.json
+git -C work/github diff --check
 ```
 
 The first run established the lockfile; the recorded rerun uses `--locked` and a

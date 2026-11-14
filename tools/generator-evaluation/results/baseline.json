@@ -5,8 +5,8 @@
     "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
     "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
     "commands": [
-      "rtk proxy env CARGO_BUILD_JOBS=2 cargo test --manifest-path /Users/tim/Documents/Codex/2026-10-17/genai-rs-gen01/work/probe-locked/baseline-probe/Cargo.toml --locked",
-      "rtk proxy env CARGO_BUILD_JOBS=2 GEN01_INJECT_WRONG_WIRE=1 cargo test --manifest-path /Users/tim/Documents/Codex/2026-10-17/genai-rs-gen01/work/probe-locked/baseline-probe/Cargo.toml --locked tests::dotted_wire -- --exact"
+      "env CARGO_BUILD_JOBS=2 cargo test --manifest-path work/probe-locked/baseline-probe/Cargo.toml --locked",
+      "env CARGO_BUILD_JOBS=2 GEN01_INJECT_WRONG_WIRE=1 cargo test --manifest-path work/probe-locked/baseline-probe/Cargo.toml --locked tests::dotted_wire -- --exact"
     ]
   },
   "candidate": {
