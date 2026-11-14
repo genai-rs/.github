@@ -31,14 +31,15 @@ All optional except `msrv`:
 
 ## Check names
 
-Check names are stable for branch protection: `fmt`, `clippy (stable)`,
-`clippy (msrv)`, `test (ubuntu-latest, stable)`, `test (ubuntu-latest, msrv)`,
-`doc`, `semver-checks`, `coverage`. The `msrv` label never changes when the
-MSRV is bumped.
+Check names are stable for branch protection: `gate`, `fmt`, `clippy (stable)`,
+`clippy (msrv)`, `test (<os>, stable)`, `test (<os>, msrv)`, `doc`,
+`semver-checks`. The `msrv` label never changes when the MSRV is bumped.
 
 The heavy jobs are skipped at step level when the [gate](gate.md) says so, so
-they still report under these names with a passing conclusion. The opt-in
-[`wasm` job](wasm.md) is not meant to be a required check.
+they still report under these names with a passing conclusion. Not meant to be
+required checks: `coverage` (informational, `continue-on-error`, and skipped
+entirely when the gate skips heavy work), the opt-in [`wasm` job](wasm.md) and
+`release-sanity` (runs only for release-plz PRs).
 
 ## Repo-specific jobs
 

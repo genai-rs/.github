@@ -23,7 +23,8 @@ posting one needs write access to the repository.
 
 Skipped jobs keep their matrix and skip at step level on an ubuntu runner, so
 every required check (e.g. `ci / test (macos-latest, msrv)`) is still reported
-with its usual name and a passing conclusion. `fmt`, cargo-audit, cargo-deny,
+with its usual name and a passing conclusion; only the informational `coverage`
+job is skipped entirely. `fmt`, cargo-audit, cargo-deny,
 gitleaks, Dependency Review, License Compliance and the cheap repo jobs always
 run. Live integration tests are not gated by `local-ci`. If the gate itself
 fails, everything runs (fail open).

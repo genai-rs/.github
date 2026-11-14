@@ -43,7 +43,7 @@ If RTK is required but unavailable, report the environment blocker.
    fixtures. For example, [OpenAI's repository rules](https://github.com/genai-rs/openai-client-base/blob/main/AGENTS.md)
    require strict upstream mirroring and forbid backfills; Langfuse's bounded,
    evidenced v3 inventory is demonstrated by [merged PR 238](https://github.com/genai-rs/langfuse-client-base/pull/238)
-   and distinguished in the [proposed provider policy](https://github.com/genai-rs/.github/pull/3).
+   and distinguished in the [accepted provider policy](client-compatibility-policy.md).
    Follow the target repository's current policy; request review before
    adding or extending compatibility data. Do not silently change API/MSRV policy.
 4. **Validate.** Run the exact focused commands from the template, recording the

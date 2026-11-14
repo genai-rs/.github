@@ -1,5 +1,14 @@
 # Client-generation strategy evidence ledger
 
+> **History.** This records the October 2026 decision and its evidence, made
+> against the stock OpenAPI Generator `rust` generator. Both base clients have
+> since moved to the `timvw-rust` generator
+> ([openapi-generator-timvw-rust](https://github.com/timvw/openapi-generator-timvw-rust)),
+> whose clients send through
+> [`timvw-rust-runtime`](https://docs.rs/timvw-rust-runtime) rather than
+> `ClientWithMiddleware`. The figures below describe the generators as evaluated
+> then, not the current pipeline.
+
 This checked-in ledger makes the decision in
 [`client-generation-strategy.md`](client-generation-strategy.md) reviewable
 without relying on a worker's local files or private handoff archives. It

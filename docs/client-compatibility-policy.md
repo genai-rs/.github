@@ -55,8 +55,9 @@ minimum. Record the affected surface, evidence, migration and version decision;
 stop and request review when classification is uncertain. A regeneration bot's
 successful run or a release bot's version proposal is insufficient approval.
 
-Both base crates currently declare Rust **1.88**. Neither automation nor a
-transitive dependency update may silently raise that minimum: test the declared
+Each base crate declares its Rust minimum in `rust-version` (shown by its MSRV
+badge). Neither automation nor a transitive dependency update may silently
+raise that minimum: test the declared
 toolchain, and obtain an explicit decision with manifest, CI and documentation
 changes before increasing it. Do not infer that all organization crates share
 this minimum.
@@ -75,8 +76,7 @@ latest published registry versions):
 Both [OpenAI][oa-manifest] and [Langfuse][lf-manifest] base manifests are 0.15.0.
 The wrappers' base ranges allow 0.15.x, not 0.16.0. For this proposal, intentional
 breaking changes require a separately reviewed incompatible release line
-(e.g. 0.15.x to 0.16.0 while below 1.0), migration notes and explicit wrapper
-adaptation; once stable, use a major version. Do not synchronize package versions
+(e.g. 0.15.x to 0.16.0), migration notes and explicit wrapper adaptation. Do not synchronize package versions
 or widen downstream ranges merely because generation succeeded.
 
 Before accepting a generated or release PR, record:
