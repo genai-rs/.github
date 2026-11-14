@@ -1,5 +1,14 @@
 # Client generation strategy by provider
 
+> **History.** This records the October 2026 decision and its evidence, made
+> against the stock OpenAPI Generator `rust` generator. Both base clients have
+> since moved to the `timvw-rust` generator
+> ([openapi-generator-timvw-rust](https://github.com/timvw/openapi-generator-timvw-rust)),
+> whose clients send through
+> [`timvw-rust-runtime`](https://docs.rs/timvw-rust-runtime) rather than
+> `ClientWithMiddleware`. The figures below describe the generators as evaluated
+> then, not the current pipeline.
+
 **Near-term strategy accepted by the designated supervisor on 17 October 2026**
 (**reviewed commit** `3e3c300e943b82f5807f4d51859233fe1e48068e`). This acceptance
 covers the provider-specific strategy decision only; it does not approve

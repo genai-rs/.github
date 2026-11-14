@@ -55,7 +55,7 @@ bash ../.github/scripts/local-ci.sh --push
 | [docs/wasm.md](docs/wasm.md) | The opt-in `wasm` job |
 | [docs/security.md](docs/security.md) | The reusable security workflow and `deny.toml` |
 | [docs/renovate.md](docs/renovate.md) | The Renovate preset |
-| [docs/client-generation-strategy.md](docs/client-generation-strategy.md) | Client generation strategy by provider ([evidence](docs/client-generation-strategy-evidence.md)) |
+| [docs/client-generation-strategy.md](docs/client-generation-strategy.md) | Client generation strategy by provider, October 2026 decision (history; [evidence](docs/client-generation-strategy-evidence.md)) |
 | [docs/client-compatibility-policy.md](docs/client-compatibility-policy.md) | Generated-client compatibility and release decisions |
 | [docs/agent-task-contract.md](docs/agent-task-contract.md) | Agent task delivery contract |
 | [tools/generator-evaluation](tools/generator-evaluation/README.md) | OpenAPI generator evaluation harness |
