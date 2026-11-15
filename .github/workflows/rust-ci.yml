@@ -331,9 +331,29 @@ jobs:
       - name: Install Rust
         if: env.RUN == 'true'
         uses: dtolnay/rust-toolchain@stable
-      - name: Check semver compatibility
+      # A crate that was never released has nothing to compare with: leave it out
+      # until its first release, and skip the check when no crate is left.
+      - name: Find crates not released yet
+        id: unpublished
         if: env.RUN == 'true'
+        run: |
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/genai-rs/.github/main/scripts/unpublished-crates.sh \
+            -o "$RUNNER_TEMP/unpublished-crates.sh"
+          unpublished=$(bash "$RUNNER_TEMP/unpublished-crates.sh")
+          published=$(cargo metadata --no-deps --format-version 1 |
+            jq -r '.packages[] | select(.publish == null or (.publish | length) > 0) | .name' |
+            grep -vxF -f <(printf '%s\n' "$unpublished") || true)
+          if [ -n "$unpublished" ]; then
+            echo "Not released yet, left out: $(printf '%s' "$unpublished" | paste -sd' ' -)"
+          fi
+          echo "exclude=$(printf '%s' "$unpublished" | paste -sd, -)" >> "$GITHUB_OUTPUT"
+          echo "any=$([ -n "$published" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - name: Check semver compatibility
+        if: env.RUN == 'true' && steps.unpublished.outputs.any == 'true'
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          exclude: ${{ steps.unpublished.outputs.exclude }}
 
   coverage:
     name: coverage
