@@ -193,7 +193,23 @@ step() {
   fi
   if [ "${RUN_SEMVER:-true}" != false ] && [ "${GENERATED:-false}" != true ]; then
     command -v cargo-semver-checks >/dev/null || die "cargo-semver-checks missing: cargo install cargo-semver-checks --locked"
-    step semver cargo +stable semver-checks
+    # Crates never released have nothing to compare with: left out until then.
+    UNPUBLISHED=$(bash "$(dirname "${BASH_SOURCE[0]}")/unpublished-crates.sh" 2>/dev/null ||
+      bash <(gh api repos/genai-rs/.github/contents/scripts/unpublished-crates.sh -H 'Accept: application/vnd.github.raw'))
+    SEMVER_ARGS=()
+    for name in $UNPUBLISHED; do
+      echo "semver-checks: $name was never released; left out"
+      SEMVER_ARGS+=(--exclude "$name")
+    done
+    PUBLISHABLE=$(cargo metadata --no-deps --format-version 1 |
+      jq -r '[.packages[] | select(.publish == null or (.publish | length) > 0)] | length')
+    if [ $((${#SEMVER_ARGS[@]} / 2)) -ge "$PUBLISHABLE" ]; then
+      echo "semver-checks: no crate was released yet; skipped"
+    elif [ ${#SEMVER_ARGS[@]} -gt 0 ]; then
+      step semver cargo +stable semver-checks --workspace "${SEMVER_ARGS[@]}"
+    else
+      step semver cargo +stable semver-checks
+    fi
   fi
   if [ -n "$UDEPS_CMD" ]; then
     command -v cargo-udeps >/dev/null || die "cargo-udeps missing: cargo install cargo-udeps --locked"
