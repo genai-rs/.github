@@ -22,6 +22,12 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # dependency that pulls it in can replace it (cargo-deny's "transitive" would flag exactly those).
 unmaintained = "workspace"
 yanked = "warn"
+ignore = [
+    # chrono is unmaintained. The generated clients use it for `date-time` fields, in their public API, and so do
+    # the crates on top of them; replacing it is a generator option and breaking releases:
+    # https://github.com/timvw/openapi-generator-timvw-rust/issues/118
+    { id = "RUSTSEC-2026-0543", reason = "chrono is in the generated clients' API; replacement tracked in openapi-generator-timvw-rust#118" },
+]
 
 [licenses]
 # Use version 2 for stricter defaults
