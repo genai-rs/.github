@@ -68,7 +68,8 @@ jobs:
         uses: MarcoIeni/release-plz-action@v0.5
         with:
           command: release
-          dry_run: ${{ github.ref != 'refs/heads/main' && 'true' || 'false' }}
+          # Empty, not 'false', on main: the action treats any non-empty value as a dry run.
+          dry_run: ${{ github.ref != 'refs/heads/main' && 'true' || '' }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
