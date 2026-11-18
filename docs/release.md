@@ -41,7 +41,7 @@ of `secrets: inherit`.
 | Secret | Purpose |
 | ------ | ------- |
 | `BOT_APP_ID`, `BOT_PRIVATE_KEY` | The GitHub App whose token opens the release PR, so its pushes trigger CI |
-| `CARGO_REGISTRY_TOKEN` | Only for a crate's [first release](trusted-publishing.md#a-new-crate), or a repo not on Trusted Publishing yet ([rotating it](token-rotation.md)) |
+| `CARGO_REGISTRY_TOKEN` | Not stored. It exists only for a few days around a new crate's [first release](trusted-publishing.md#a-new-crate) |
 
 ## Per crate
 
@@ -64,5 +64,3 @@ A repository that publishes a crate needs:
   repository's `CARGO_REGISTRY_TOKEN` secret, in which case the first push to
   main publishes it. Then the crate gets its trusted publisher and the secret
   goes: see [a new crate](trusted-publishing.md#a-new-crate).
-- **A row** in [`scripts/rotate-crates-token.sh`](../scripts/rotate-crates-token.sh)
-  for as long as the repository keeps a token.

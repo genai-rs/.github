@@ -7,10 +7,18 @@ coverage. Minimal call:
 ```yaml
 jobs:
   ci:
+    permissions:
+      contents: read
+      issues: write   # the "CI is failing on main" issue
+      actions: read   # the failed jobs listed in it
     uses: genai-rs/.github/.github/workflows/rust-ci.yml@main
     with: { msrv: "1.88" }
     secrets: inherit
 ```
+
+The permissions are for [`main-status`](gate.md#a-red-main): a called workflow
+gets no more than its caller grants, and a caller that grants less fails to
+start.
 
 ## Inputs
 
@@ -34,9 +42,11 @@ All optional except `msrv`:
 Check names are stable for branch protection: `gate`, `fmt`, `clippy (stable)`,
 `clippy (msrv)`, `test (<os>, stable)`, `test (<os>, msrv)`, `doc`,
 `semver-checks`. The `msrv` label never changes when the MSRV is bumped.
+`main-status` runs on `main` only and is not meant to be required.
 
 The heavy jobs are skipped at step level when the [gate](gate.md) says so, so
-they still report under these names with a passing conclusion. Not meant to be
+they still report under these names with a passing conclusion;
+`test (windows-latest, stable)` runs on every pull request. Not meant to be
 required checks: `coverage` (informational, `continue-on-error`, and skipped
 entirely when the gate skips heavy work), the opt-in [`wasm` job](wasm.md) and
 `release-sanity` (runs only for release-plz PRs).

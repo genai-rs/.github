@@ -52,7 +52,10 @@ toolchains and host) on HEAD; on failure it posts nothing and exits non-zero.
 
 ## What it does not cover
 
-It runs on one host (usually macOS arm64), so Linux/Windows-specific breakage
-and coverage are only caught by the full run on `main`. Live integration tests
+It runs on one host (usually macOS arm64). Windows is covered on the pull
+request all the same: the gate always runs `test (windows-latest, stable)`.
+Other Linux- or Windows-specific breakage (MSRV on Windows, clippy and docs on
+Linux) and coverage are only caught by the full run on `main`, which opens an
+[issue](gate.md#a-red-main) when it fails. Live integration tests
 are unaffected by the gate and keep running. Fork PRs and pushes to `main`
 always run the full CI.

@@ -4,6 +4,7 @@
 #
 #   jobs:
 #     ci:
+#       permissions: { contents: read, issues: write, actions: read }
 #       uses: genai-rs/.github/.github/workflows/rust-ci.yml@main
 #       with: { msrv: "1.88" }
 #       secrets: inherit
@@ -18,14 +19,22 @@
 # The `gate` job decides how much heavy work a commit needs (see
 # local-ci-gate.yml, whose logic it mirrors):
 #   full      push to main, fork PRs, PRs without attestation: everything runs,
-#             except that on PRs the non-Linux test entries are skipped
-#             (macOS/Windows run on main, or on PRs labelled `full-ci`);
+#             except that on PRs the macOS and Windows test entries are skipped
+#             (they run on main, or on PRs labelled `full-ci`);
 #   local-ci  same-repo PR whose head commit carries a successful `local-ci`
 #             commit status (posted by scripts/local-ci.sh): heavy jobs skip;
+# and on every PR but a release one, `test (windows-latest, stable)` runs
+# whatever the mode: no author's machine tests Windows.
 #   release   release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md:
-#             heavy jobs skip, `release-sanity` runs cargo check + package.
+#             heavy jobs skip, `release-sanity` runs cargo check + package
+#             (every publishable member of the workspace together).
 # Heavy jobs skip at step level, so every matrix entry still reports its
 # expanded check name with a passing conclusion, on an ubuntu runner.
+#
+# On main (push, schedule, dispatch), `main-status` opens an issue "CI is
+# failing on main" in the calling repo when a job failed, comments on it while
+# it stays red, and closes it at the next green run. That is what the
+# permissions above are for: a caller that grants less fails to start.
 name: Rust CI
 
 on:
@@ -107,6 +116,7 @@ jobs:
       mode: ${{ steps.gate.outputs.mode }}
       heavy: ${{ steps.gate.outputs.heavy }}
       all-os: ${{ steps.gate.outputs.all-os }}
+      pr-windows: ${{ steps.gate.outputs.pr-windows }}
       reason: ${{ steps.gate.outputs.reason }}
     steps:
       - name: Decide CI mode
@@ -150,12 +160,12 @@ jobs:
 
           if [ "$EVENT" = "pull_request" ]; then
             all_os=false
-            reason="pull request: full CI on Linux, macOS/Windows only on main (label 'full-ci' to force)"
+            reason="pull request: full CI on Linux, plus the stable tests on Windows; the other macOS/Windows entries only on main (label 'full-ci' to force)"
             if [ "$FULL_CI_LABEL" = "true" ]; then
               all_os=true
               reason="pull request labelled full-ci: full CI on all OSes"
             elif [ "$HEAD_REPO" != "$REPO" ]; then
-              reason="fork pull request: full CI on Linux, macOS/Windows only on main"
+              reason="fork pull request: full CI on Linux, plus the stable tests on Windows; the other macOS/Windows entries only on main"
             elif [[ "$PR_AUTHOR" == "genai-ci-bot[bot]" && ( "$HEAD_REF" == release-plz-* || "$HEAD_REF" == automated/release-plz/* ) ]] && release_files_only; then
               mode=release
               reason="release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md: heavy jobs skipped"
@@ -166,7 +176,7 @@ jobs:
                 state=${status%% *}
                 if [ "$state" = "success" ]; then
                   mode=local-ci
-                  reason="local-ci attested ${HEAD_SHA}: ${status#* }"
+                  reason="local-ci attested ${HEAD_SHA}: ${status#* }; heavy jobs skipped, except the stable tests on Windows"
                   break
                 fi
                 if [ "$SECONDS" -ge "$deadline" ]; then
@@ -179,13 +189,20 @@ jobs:
 
           heavy=false
           [ "$mode" = "full" ] && heavy=true
-          echo "mode=$mode heavy=$heavy all-os=$all_os"
+          # Windows is the one OS nobody's own machine tests: its stable test
+          # entry runs on every pull request, attested by local-ci or not.
+          pr_windows=false
+          if [ "$EVENT" = "pull_request" ] && [ "$mode" != "release" ]; then
+            pr_windows=true
+          fi
+          echo "mode=$mode heavy=$heavy all-os=$all_os pr-windows=$pr_windows"
           echo "$reason"
           echo "::notice title=CI mode $mode::$reason"
           {
             echo "mode=$mode"
             echo "heavy=$heavy"
             echo "all-os=$all_os"
+            echo "pr-windows=$pr_windows"
             echo "reason=$reason"
           } >> "$GITHUB_OUTPUT"
 
@@ -220,8 +237,11 @@ jobs:
       - name: Skip (${{ needs.gate.outputs.mode }})
         if: env.RUN != 'true'
         env:
+          MODE: ${{ needs.gate.outputs.mode }}
           REASON: ${{ needs.gate.outputs.reason }}
-        run: echo "Skipped - $REASON"
+        run: |
+          echo "Skipped - $REASON"
+          echo "**Skipped by the gate** (mode \`$MODE\`): this job built and tested nothing. $REASON" >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repository
         if: env.RUN == 'true'
         uses: actions/checkout@v7
@@ -244,12 +264,13 @@ jobs:
     name: test (${{ matrix.os }}, ${{ matrix.toolchain }})
     needs: gate
     if: ${{ !cancelled() }}
-    # Skipped entries run their no-op on ubuntu, so they never wait for a
-    # macOS/Windows runner.
-    runs-on: ${{ (needs.gate.outputs.heavy != 'false' && (startsWith(matrix.os, 'ubuntu') || needs.gate.outputs.all-os != 'false')) && matrix.os || 'ubuntu-latest' }}
+    # An entry runs when the gate asks for heavy work on its OS, and the stable
+    # Windows entry on every pull request (pr-windows). Skipped entries run
+    # their no-op on ubuntu, so they never wait for a macOS/Windows runner.
+    runs-on: ${{ ((needs.gate.outputs.heavy != 'false' && (startsWith(matrix.os, 'ubuntu') || needs.gate.outputs.all-os != 'false')) || (needs.gate.outputs.pr-windows == 'true' && startsWith(matrix.os, 'windows') && matrix.toolchain == 'stable')) && matrix.os || 'ubuntu-latest' }}
     timeout-minutes: 30
     env:
-      RUN: ${{ needs.gate.outputs.heavy != 'false' && (startsWith(matrix.os, 'ubuntu') || needs.gate.outputs.all-os != 'false') }}
+      RUN: ${{ (needs.gate.outputs.heavy != 'false' && (startsWith(matrix.os, 'ubuntu') || needs.gate.outputs.all-os != 'false')) || (needs.gate.outputs.pr-windows == 'true' && startsWith(matrix.os, 'windows') && matrix.toolchain == 'stable') }}
     strategy:
       fail-fast: false
       matrix:
@@ -259,8 +280,11 @@ jobs:
       - name: Skip (${{ needs.gate.outputs.mode }})
         if: env.RUN != 'true'
         env:
+          MODE: ${{ needs.gate.outputs.mode }}
           REASON: ${{ needs.gate.outputs.reason }}
-        run: echo "Skipped - $REASON"
+        run: |
+          echo "Skipped - $REASON"
+          echo "**Skipped by the gate** (mode \`$MODE\`): this job built and tested nothing. $REASON" >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repository
         if: env.RUN == 'true'
         uses: actions/checkout@v7
@@ -294,8 +318,11 @@ jobs:
       - name: Skip (${{ needs.gate.outputs.mode }})
         if: env.RUN != 'true'
         env:
+          MODE: ${{ needs.gate.outputs.mode }}
           REASON: ${{ needs.gate.outputs.reason }}
-        run: echo "Skipped - $REASON"
+        run: |
+          echo "Skipped - $REASON"
+          echo "**Skipped by the gate** (mode \`$MODE\`): this job built and tested nothing. $REASON" >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repository
         if: env.RUN == 'true'
         uses: actions/checkout@v7
@@ -323,8 +350,11 @@ jobs:
       - name: Skip (${{ needs.gate.outputs.mode }})
         if: env.RUN != 'true'
         env:
+          MODE: ${{ needs.gate.outputs.mode }}
           REASON: ${{ needs.gate.outputs.reason }}
-        run: echo "Skipped - $REASON"
+        run: |
+          echo "Skipped - $REASON"
+          echo "**Skipped by the gate** (mode \`$MODE\`): this job built and tested nothing. $REASON" >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repository
         if: env.RUN == 'true'
         uses: actions/checkout@v7
@@ -405,8 +435,11 @@ jobs:
       - name: Skip (${{ needs.gate.outputs.mode }})
         if: env.RUN != 'true'
         env:
+          MODE: ${{ needs.gate.outputs.mode }}
           REASON: ${{ needs.gate.outputs.reason }}
-        run: echo "Skipped - $REASON"
+        run: |
+          echo "Skipped - $REASON"
+          echo "**Skipped by the gate** (mode \`$MODE\`): this job built and tested nothing. $REASON" >> "$GITHUB_STEP_SUMMARY"
       - name: Checkout repository
         if: env.RUN == 'true'
         uses: actions/checkout@v7
@@ -481,5 +514,83 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: cargo check
         run: cargo check ${{ inputs.features }}
+      # Every publishable member, packaged together: cargo resolves their
+      # dependencies on each other locally, so a release that bumps several
+      # crates of one workspace (a crate and its -macros crate) packages before
+      # any of them is on crates.io. `publish = false` members are left out.
       - name: cargo package (dry run)
-        run: cargo package --no-verify --allow-dirty
+        run: |
+          set -euo pipefail
+          mapfile -t private < <(cargo metadata --no-deps --format-version 1 |
+            jq -r '.packages[] | select(.publish == []) | .name')
+          exclude=()
+          for name in "${private[@]}"; do exclude+=(--exclude "$name"); done
+          if [ "${#private[@]}" -gt 0 ]; then echo "Not published, left out: ${private[*]}"; fi
+          cargo package --workspace "${exclude[@]}" --no-verify --allow-dirty
+
+  # On main: an issue while CI is red, closed when it is green again. Never
+  # fails CI itself.
+  main-status:
+    name: main-status
+    needs: [fmt, clippy, test, doc, semver-checks, coverage, wasm]
+    if: ${{ always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      issues: write
+      actions: read
+    steps:
+      - name: Open, update or close the "CI is failing on main" issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+          NEEDS: ${{ toJSON(needs) }}
+          TITLE: CI is failing on main
+        run: |
+          set -uo pipefail
+          warn() { echo "::warning title=main-status::$*"; exit 0; }
+
+          failed=$(jq -r '[to_entries[] | select(.value.result == "failure") | .key] | join(", ")' <<<"$NEEDS")
+          unfinished=$(jq -r '[to_entries[] | select(.value.result == "cancelled") | .key] | join(", ")' <<<"$NEEDS")
+
+          # The open issue this job wrote earlier, if any (exact title).
+          issue=$(gh issue list --repo "$REPO" --state open --search "\"$TITLE\" in:title" \
+            --json number,title --jq "[.[] | select(.title == \"$TITLE\")][0].number // empty") \
+            || warn "cannot list the issues of $REPO (does the caller grant issues: write?)"
+
+          if [ -z "$failed" ]; then
+            if [ -n "$unfinished" ]; then
+              echo "Cancelled jobs ($unfinished): neither red nor green, the issue is left as it is."
+            elif [ -n "$issue" ]; then
+              gh issue close "$issue" --repo "$REPO" \
+                --comment "CI passes on main again: [run $RUN_ID]($RUN_URL), commit $SHA." \
+                || warn "cannot close issue #$issue"
+              echo "Closed #$issue."
+            else
+              echo "CI is green on main; no open issue."
+            fi
+            exit 0
+          fi
+
+          # The failed jobs by their check names, with links; the job ids when
+          # the run's jobs cannot be read.
+          jobs=$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs?per_page=100" --paginate \
+            --jq '.jobs[] | select(.conclusion == "failure") | "- [\(.name)](\(.html_url))"' 2>/dev/null) || jobs=""
+          [ -n "$jobs" ] || jobs="- $failed"
+          body=$(printf '%s\n\n%s\n\n%s\n' \
+            "CI failed on \`main\` ($EVENT): [run $RUN_ID]($RUN_URL), commit $SHA." \
+            "$jobs" \
+            "Opened by the \`main-status\` job of the shared CI workflow; it comments here while main stays red and closes this issue at the next green run.")
+
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --repo "$REPO" --body "$body" >/dev/null || warn "cannot comment on issue #$issue"
+            echo "Commented on #$issue."
+          else
+            gh issue create --repo "$REPO" --title "$TITLE" --body "$body" \
+              || warn "cannot open an issue in $REPO (does the caller grant issues: write?)"
+          fi

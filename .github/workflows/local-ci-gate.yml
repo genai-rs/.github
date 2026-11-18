@@ -28,6 +28,9 @@
 #   heavy   "true" when heavy jobs must run (mode == full)
 #   all-os  "true" when macOS/Windows jobs must run as well (not a PR, or a PR
 #           labelled `full-ci`)
+#   pr-windows  "true" on every pull request except a release-plz one: the
+#           stable Windows job runs then, whatever `heavy` and `all-os` say
+#           (local-ci runs on the author's machine, which is not Windows)
 #   reason  human-readable explanation
 name: Local CI gate
 
@@ -49,6 +52,9 @@ on:
       all-os:
         description: '"true" when macOS/Windows jobs must run'
         value: ${{ jobs.decide.outputs.all-os }}
+      pr-windows:
+        description: '"true" on a pull request that is not a release PR: a Windows job must run even when heavy is "false"'
+        value: ${{ jobs.decide.outputs.pr-windows }}
       reason:
         description: Why this mode was chosen
         value: ${{ jobs.decide.outputs.reason }}
@@ -65,6 +71,7 @@ jobs:
       mode: ${{ steps.gate.outputs.mode }}
       heavy: ${{ steps.gate.outputs.heavy }}
       all-os: ${{ steps.gate.outputs.all-os }}
+      pr-windows: ${{ steps.gate.outputs.pr-windows }}
       reason: ${{ steps.gate.outputs.reason }}
     steps:
       - name: Decide CI mode
@@ -108,12 +115,12 @@ jobs:
 
           if [ "$EVENT" = "pull_request" ]; then
             all_os=false
-            reason="pull request: full CI on Linux, macOS/Windows only on main (label 'full-ci' to force)"
+            reason="pull request: full CI on Linux, plus the stable tests on Windows; the other macOS/Windows entries only on main (label 'full-ci' to force)"
             if [ "$FULL_CI_LABEL" = "true" ]; then
               all_os=true
               reason="pull request labelled full-ci: full CI on all OSes"
             elif [ "$HEAD_REPO" != "$REPO" ]; then
-              reason="fork pull request: full CI on Linux, macOS/Windows only on main"
+              reason="fork pull request: full CI on Linux, plus the stable tests on Windows; the other macOS/Windows entries only on main"
             elif [[ "$PR_AUTHOR" == "genai-ci-bot[bot]" && ( "$HEAD_REF" == release-plz-* || "$HEAD_REF" == automated/release-plz/* ) ]] && release_files_only; then
               mode=release
               reason="release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md: heavy jobs skipped"
@@ -124,7 +131,7 @@ jobs:
                 state=${status%% *}
                 if [ "$state" = "success" ]; then
                   mode=local-ci
-                  reason="local-ci attested ${HEAD_SHA}: ${status#* }"
+                  reason="local-ci attested ${HEAD_SHA}: ${status#* }; heavy jobs skipped, except the stable tests on Windows"
                   break
                 fi
                 if [ "$SECONDS" -ge "$deadline" ]; then
@@ -137,12 +144,19 @@ jobs:
 
           heavy=false
           [ "$mode" = "full" ] && heavy=true
-          echo "mode=$mode heavy=$heavy all-os=$all_os"
+          # Windows is the one OS nobody's own machine tests: its stable test
+          # entry runs on every pull request, attested by local-ci or not.
+          pr_windows=false
+          if [ "$EVENT" = "pull_request" ] && [ "$mode" != "release" ]; then
+            pr_windows=true
+          fi
+          echo "mode=$mode heavy=$heavy all-os=$all_os pr-windows=$pr_windows"
           echo "$reason"
           echo "::notice title=CI mode $mode::$reason"
           {
             echo "mode=$mode"
             echo "heavy=$heavy"
             echo "all-os=$all_os"
+            echo "pr-windows=$pr_windows"
             echo "reason=$reason"
           } >> "$GITHUB_OUTPUT"
