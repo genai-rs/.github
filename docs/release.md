@@ -1,0 +1,42 @@
+# Reusable release workflow
+
+[`.github/workflows/release-plz.yml`](../.github/workflows/release-plz.yml) runs
+[release-plz](https://release-plz.dev) the same way in every crate:
+
+- **On a push to main**, it opens or updates the release PR (versions and
+  changelogs from the conventional commits), and publishes every crate whose
+  version is not on crates.io yet, with a tag and a GitHub release.
+- So **merging the release PR publishes**. Reviewing that PR is the release
+  decision: check the proposed versions, and mark breaking changes with `!` or
+  `BREAKING CHANGE:` before merging.
+- **Dispatched from another branch**, it runs `release --dry-run`: a check that
+  a release would succeed, without a PR or a publish.
+
+A crate's `.github/workflows/release-plz.yml`:
+
+```yaml
+name: Release-plz
+on:
+  push: { branches: [main] }
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  release-plz:
+    uses: genai-rs/.github/.github/workflows/release-plz.yml@main
+    secrets: inherit
+```
+
+## Secrets
+
+| Secret | Purpose |
+| ------ | ------- |
+| `BOT_APP_ID`, `BOT_PRIVATE_KEY` | The GitHub App whose token opens the release PR, so its pushes trigger CI |
+| `CARGO_REGISTRY_TOKEN` | Publishing to crates.io |
+
+## Per crate
+
+What differs per crate stays in its `release-plz.toml`: tag names, changelog
+and PR text, packages that are never released (`release = false`), version
+groups.

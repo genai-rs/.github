@@ -1,7 +1,7 @@
 # genai-rs/.github
 
-Shared GitHub configuration for the genai-rs Rust crates: reusable CI and
-security workflows, a canonical `deny.toml` and a Renovate preset. The
+Shared GitHub configuration for the genai-rs Rust crates: reusable CI,
+security and release workflows, a canonical `deny.toml` and a Renovate preset. The
 organization profile lives in [`profile/README.md`](profile/README.md).
 
 ## Quick start
@@ -43,6 +43,8 @@ bash ../.github/scripts/local-ci.sh --push
 - **[Security workflow](docs/security.md)**: [`rust-security.yml`](.github/workflows/rust-security.yml)
   runs cargo-audit, cargo-deny (with the canonical [`deny.toml`](deny.toml)),
   gitleaks and CodeQL.
+- **[Release workflow](docs/release.md)**: [`release-plz.yml`](.github/workflows/release-plz.yml)
+  opens the release PR and publishes when it is merged.
 - **[Renovate preset](docs/renovate.md)**: [`renovate-default.json`](renovate-default.json).
 
 ## Documentation
@@ -54,6 +56,7 @@ bash ../.github/scripts/local-ci.sh --push
 | [docs/local-ci.md](docs/local-ci.md) | Running `local-ci.sh`, what it runs and attests, what it does not cover |
 | [docs/wasm.md](docs/wasm.md) | The opt-in `wasm` job |
 | [docs/security.md](docs/security.md) | The reusable security workflow and `deny.toml` |
+| [docs/release.md](docs/release.md) | Calling `release-plz.yml`: release PR, publishing, secrets |
 | [docs/renovate.md](docs/renovate.md) | The Renovate preset |
 | [docs/client-generation-strategy.md](docs/client-generation-strategy.md) | Client generation strategy by provider, October 2026 decision (history; [evidence](docs/client-generation-strategy-evidence.md)) |
 | [docs/client-compatibility-policy.md](docs/client-compatibility-policy.md) | Generated-client compatibility and release decisions |
