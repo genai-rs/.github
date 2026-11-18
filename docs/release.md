@@ -34,7 +34,7 @@ jobs:
 | Secret | Purpose |
 | ------ | ------- |
 | `BOT_APP_ID`, `BOT_PRIVATE_KEY` | The GitHub App whose token opens the release PR, so its pushes trigger CI |
-| `CARGO_REGISTRY_TOKEN` | Publishing to crates.io |
+| `CARGO_REGISTRY_TOKEN` | Publishing to crates.io; [rotating it](token-rotation.md) |
 
 ## Per crate
 

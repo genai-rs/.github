@@ -44,7 +44,9 @@ bash ../.github/scripts/local-ci.sh --push
   runs cargo-audit, cargo-deny (with the canonical [`deny.toml`](deny.toml)),
   gitleaks and CodeQL.
 - **[Release workflow](docs/release.md)**: [`release-plz.yml`](.github/workflows/release-plz.yml)
-  opens the release PR and publishes when it is merged.
+  opens the release PR and publishes when it is merged;
+  [`rotate-crates-token.sh`](scripts/rotate-crates-token.sh) [rotates](docs/token-rotation.md)
+  the crates.io token it uses.
 - **[Renovate preset](docs/renovate.md)**: [`renovate-default.json`](renovate-default.json).
 
 ## Documentation
@@ -57,6 +59,7 @@ bash ../.github/scripts/local-ci.sh --push
 | [docs/wasm.md](docs/wasm.md) | The opt-in `wasm` job |
 | [docs/security.md](docs/security.md) | The reusable security workflow and `deny.toml` |
 | [docs/release.md](docs/release.md) | Calling `release-plz.yml`: release PR, publishing, secrets |
+| [docs/token-rotation.md](docs/token-rotation.md) | Creating a scoped crates.io token and setting it in every repo |
 | [docs/renovate.md](docs/renovate.md) | The Renovate preset |
 | [docs/client-generation-strategy.md](docs/client-generation-strategy.md) | Client generation strategy by provider, October 2026 decision (history; [evidence](docs/client-generation-strategy-evidence.md)) |
 | [docs/client-compatibility-policy.md](docs/client-compatibility-policy.md) | Generated-client compatibility and release decisions |
