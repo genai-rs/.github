@@ -24,6 +24,7 @@ SECRET=CARGO_REGISTRY_TOKEN
 # repo | crates the token must be allowed to publish (crates.io crate scopes)
 REPOS=(
   "genai-rs/openai-client-base|openai-client-base"
+  "genai-rs/openai-mock-server|openai-mock-server"
   "genai-rs/langfuse-client-base|langfuse-client-base"
   "genai-rs/openai-ergonomic|openai-ergonomic"
   "genai-rs/langfuse-ergonomic|langfuse-ergonomic langfuse-ergonomic-macros"
