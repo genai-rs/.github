@@ -26,7 +26,8 @@
 # and on every PR but a release one, `test (windows-latest, stable)` runs
 # whatever the mode: no author's machine tests Windows.
 #   release   release-plz PR touching only Cargo.toml/Cargo.lock/CHANGELOG.md:
-#             heavy jobs skip, `release-sanity` runs cargo check + package.
+#             heavy jobs skip, `release-sanity` runs cargo check + package
+#             (every publishable member of the workspace together).
 # Heavy jobs skip at step level, so every matrix entry still reports its
 # expanded check name with a passing conclusion, on an ubuntu runner.
 #
@@ -513,8 +514,19 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: cargo check
         run: cargo check ${{ inputs.features }}
+      # Every publishable member, packaged together: cargo resolves their
+      # dependencies on each other locally, so a release that bumps several
+      # crates of one workspace (a crate and its -macros crate) packages before
+      # any of them is on crates.io. `publish = false` members are left out.
       - name: cargo package (dry run)
-        run: cargo package --no-verify --allow-dirty
+        run: |
+          set -euo pipefail
+          mapfile -t private < <(cargo metadata --no-deps --format-version 1 |
+            jq -r '.packages[] | select(.publish == []) | .name')
+          exclude=()
+          for name in "${private[@]}"; do exclude+=(--exclude "$name"); done
+          if [ "${#private[@]}" -gt 0 ]; then echo "Not published, left out: ${private[*]}"; fi
+          cargo package --workspace "${exclude[@]}" --no-verify --allow-dirty
 
   # On main: an issue while CI is red, closed when it is green again. Never
   # fails CI itself.

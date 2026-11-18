@@ -13,7 +13,7 @@ the stable tests on Windows run on every pull request.
 | push to `main`, schedule, manual dispatch                                 | `full`     | all, on every OS                                                                     |
 | PR (incl. forks) without attestation                                      | `full`     | all on Linux, and `test (windows-latest, stable)`; the other macOS/Windows entries skipped (label the PR `full-ci` to run them) |
 | same-repo PR whose head commit has a `local-ci` = success status          | `local-ci` | skipped, except `test (windows-latest, stable)`                                      |
-| release-plz PR (bot author, `release-plz-*` / `automated/release-plz/*`) touching only `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md` | `release` | skipped; `release-sanity` runs `cargo check` + `cargo package --no-verify` |
+| release-plz PR (bot author, `release-plz-*` / `automated/release-plz/*`) touching only `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md` | `release` | skipped; `release-sanity` runs `cargo check` + `cargo package --workspace --no-verify` (publishable members, packaged together so they find each other's new versions) |
 
 For a same-repo PR the gate polls the head commit's statuses for up to
 `local-ci-wait-seconds` (default 60) for a `local-ci` = success status. Statuses
