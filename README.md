@@ -59,6 +59,7 @@ bash ../.github/scripts/local-ci.sh --push
 | [docs/wasm.md](docs/wasm.md) | The opt-in `wasm` job |
 | [docs/security.md](docs/security.md) | The reusable security workflow and `deny.toml` |
 | [docs/release.md](docs/release.md) | Calling `release-plz.yml`: release PR, publishing, secrets |
+| [docs/trusted-publishing.md](docs/trusted-publishing.md) | Publishing to crates.io without a stored token; a crate's first release |
 | [docs/token-rotation.md](docs/token-rotation.md) | Creating a scoped crates.io token and setting it in every repo |
 | [docs/renovate.md](docs/renovate.md) | The Renovate preset |
 | [docs/client-generation-strategy.md](docs/client-generation-strategy.md) | Client generation strategy by provider, October 2026 decision (history; [evidence](docs/client-generation-strategy-evidence.md)) |
