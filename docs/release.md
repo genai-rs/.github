@@ -48,3 +48,21 @@ of `secrets: inherit`.
 What differs per crate stays in its `release-plz.toml`: tag names, changelog
 and PR text, packages that are never released (`release = false`), version
 groups.
+
+## A new repository
+
+A repository that publishes a crate needs:
+
+- **The caller workflow** above, as `.github/workflows/release-plz.yml`, and a
+  `release-plz.toml`.
+- **`BOT_APP_ID` and `BOT_PRIVATE_KEY`**: organization secrets, available to
+  the repository without setting anything.
+- **The `release` label**, which release-plz puts on the release PR.
+- **A first release with a token.** crates.io has no crate yet to trust a
+  workflow for, so the first version is published with a short-lived token
+  limited to the crate's name, with the `publish-new` scope: by hand, or as the
+  repository's `CARGO_REGISTRY_TOKEN` secret, in which case the first push to
+  main publishes it. Then the crate gets its trusted publisher and the secret
+  goes: see [a new crate](trusted-publishing.md#a-new-crate).
+- **A row** in [`scripts/rotate-crates-token.sh`](../scripts/rotate-crates-token.sh)
+  for as long as the repository keeps a token.
