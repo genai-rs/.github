@@ -3,9 +3,10 @@
 [`.github/workflows/release-plz.yml`](../.github/workflows/release-plz.yml) runs
 [release-plz](https://release-plz.dev) the same way in every crate:
 
-- **On a push to main**, it opens or updates the release PR (versions and
-  changelogs from the conventional commits), and publishes every crate whose
-  version is not on crates.io yet, with a tag and a GitHub release.
+- **On a push to main**, the `Release` job publishes every crate whose version
+  is not on crates.io yet, with a tag and a GitHub release, and the `Release PR`
+  job opens or updates the release PR (versions and changelogs from the
+  conventional commits). Only `Release` gets the crates.io token.
 - So **merging the release PR publishes**. Reviewing that PR is the release
   decision: check the proposed versions, and mark breaking changes with `!` or
   `BREAKING CHANGE:` before merging.
