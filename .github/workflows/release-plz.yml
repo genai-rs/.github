@@ -3,8 +3,8 @@
 # On main, one job publishes every crate whose version is not on crates.io yet,
 # and another opens or updates the release PR: merging the release PR publishes.
 # Only the publishing job can publish: it gets the OIDC token for crates.io
-# Trusted Publishing, or the CARGO_REGISTRY_TOKEN secret where one is still
-# set. Dispatched from another branch, it only checks that a release would
+# Trusted Publishing, or the CARGO_REGISTRY_TOKEN secret a new crate has for
+# its first release. Dispatched from another branch, it only checks that a release would
 # succeed (release --dry-run).
 #
 # The caller's .github/workflows/release-plz.yml:
@@ -23,8 +23,8 @@
 #       secrets: inherit
 #
 # Secrets: BOT_APP_ID and BOT_PRIVATE_KEY (a GitHub App, so the release PR's
-# pushes trigger CI). CARGO_REGISTRY_TOKEN only until the repo's crates trust
-# this workflow on crates.io (docs/trusted-publishing.md).
+# pushes trigger CI). No crates.io token: CARGO_REGISTRY_TOKEN exists only for
+# a new crate's first release (docs/trusted-publishing.md).
 name: Release-plz
 
 on:
@@ -45,7 +45,7 @@ on:
         required: true
       BOT_PRIVATE_KEY:
         required: true
-      # Only for a repo that does not publish through Trusted Publishing (yet).
+      # Only for a new crate's first release (docs/trusted-publishing.md).
       CARGO_REGISTRY_TOKEN:
         required: false
 
