@@ -31,6 +31,11 @@ jobs:
     secrets: inherit
 ```
 
+A crate that is not at the repo root passes `manifest-path` and `config`
+(`with: { manifest-path: runtime/Cargo.toml, config: runtime/release-plz.toml }`).
+A caller outside the genai-rs organization passes the secrets by name instead
+of `secrets: inherit`.
+
 ## Secrets
 
 | Secret | Purpose |

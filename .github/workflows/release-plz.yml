@@ -29,6 +29,17 @@ name: Release-plz
 
 on:
   workflow_call:
+    inputs:
+      manifest-path:
+        description: Cargo.toml of the workspace to release, when it is not at the repo root
+        required: false
+        type: string
+        default: ""
+      config:
+        description: release-plz config file, when it is not release-plz.toml at the repo root
+        required: false
+        type: string
+        default: ""
     secrets:
       BOT_APP_ID:
         required: true
@@ -84,6 +95,8 @@ jobs:
         uses: MarcoIeni/release-plz-action@v0.5
         with:
           command: release
+          manifest_path: ${{ inputs.manifest-path }}
+          config: ${{ inputs.config }}
           # Empty, not 'false', on main: the action treats any non-empty value as a dry run.
           dry_run: ${{ github.ref != 'refs/heads/main' && 'true' || '' }}
         env:
@@ -94,6 +107,8 @@ jobs:
         uses: MarcoIeni/release-plz-action@v0.5
         with:
           command: release
+          manifest_path: ${{ inputs.manifest-path }}
+          config: ${{ inputs.config }}
           dry_run: ${{ github.ref != 'refs/heads/main' && 'true' || '' }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -128,5 +143,7 @@ jobs:
         uses: MarcoIeni/release-plz-action@v0.5
         with:
           command: release-pr
+          manifest_path: ${{ inputs.manifest-path }}
+          config: ${{ inputs.config }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
