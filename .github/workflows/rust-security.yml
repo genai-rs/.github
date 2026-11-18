@@ -54,6 +54,11 @@ jobs:
         uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # Keep in sync with [advisories].ignore in deny.toml.
+          # RUSTSEC-2026-0543: chrono is unmaintained, but it is in the generated
+          # clients' public API; replacement tracked in
+          # https://github.com/timvw/openapi-generator-timvw-rust/issues/118
+          ignore: RUSTSEC-2026-0543
       - name: Verify a committed Cargo.lock was not modified
         if: always()
         run: git diff --exit-code -- Cargo.lock
