@@ -6,7 +6,8 @@
 - **On a push to main**, the `Release` job publishes every crate whose version
   is not on crates.io yet, with a tag and a GitHub release, and the `Release PR`
   job opens or updates the release PR (versions and changelogs from the
-  conventional commits). Only `Release` gets the crates.io token.
+  conventional commits). Only `Release` can publish, through
+  [Trusted Publishing](trusted-publishing.md).
 - So **merging the release PR publishes**. Reviewing that PR is the release
   decision: check the proposed versions, and mark breaking changes with `!` or
   `BREAKING CHANGE:` before merging.
@@ -23,6 +24,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 jobs:
   release-plz:
     uses: genai-rs/.github/.github/workflows/release-plz.yml@main
@@ -34,7 +36,7 @@ jobs:
 | Secret | Purpose |
 | ------ | ------- |
 | `BOT_APP_ID`, `BOT_PRIVATE_KEY` | The GitHub App whose token opens the release PR, so its pushes trigger CI |
-| `CARGO_REGISTRY_TOKEN` | Publishing to crates.io; [rotating it](token-rotation.md) |
+| `CARGO_REGISTRY_TOKEN` | Only for a crate's [first release](trusted-publishing.md#a-new-crate), or a repo not on Trusted Publishing yet ([rotating it](token-rotation.md)) |
 
 ## Per crate
 
