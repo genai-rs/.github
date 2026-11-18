@@ -1,8 +1,9 @@
 # Reusable release workflow for genai-rs Rust crates.
 #
-# On main, release-plz opens or updates the release PR, and publishes every
-# crate whose version is not on crates.io yet: merging the release PR publishes.
-# Dispatched from another branch, it only checks that a release would succeed.
+# On main, one job publishes every crate whose version is not on crates.io yet,
+# and another opens or updates the release PR: merging the release PR publishes.
+# Only the publishing job gets the crates.io token. Dispatched from another
+# branch, it only checks that a release would succeed (release --dry-run).
 #
 # The caller's .github/workflows/release-plz.yml:
 #
@@ -37,12 +38,14 @@ permissions:
   pull-requests: write
 
 jobs:
-  release-plz:
-    name: Release-plz
+  # Publishes what crates.io does not have yet; on another branch, a dry run.
+  # The only job with the crates.io token.
+  release:
+    name: Release
     runs-on: ubuntu-latest
-    # One release at a time per repository; a publish in progress is never cancelled.
+    # A publish in progress is never cancelled.
     concurrency:
-      group: release-plz-${{ github.repository }}
+      group: release-plz-release-${{ github.ref }}
       cancel-in-progress: false
     steps:
       - name: Create GitHub App token
@@ -61,11 +64,43 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Run release-plz
+      - name: Run release-plz release
         uses: MarcoIeni/release-plz-action@v0.5
         with:
-          command: ${{ github.ref != 'refs/heads/main' && 'release' || '' }}
-          dry_run: ${{ github.ref != 'refs/heads/main' && 'true' || '' }}
+          command: release
+          dry_run: ${{ github.ref != 'refs/heads/main' && 'true' || 'false' }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # Opens or updates the release PR, on main only. No crates.io token.
+  release-pr:
+    name: Release PR
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-plz-pr-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run release-plz release-pr
+        uses: MarcoIeni/release-plz-action@v0.5
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
