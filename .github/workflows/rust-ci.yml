@@ -9,6 +9,11 @@
 #       with: { msrv: "1.88" }
 #       secrets: inherit
 #
+# Run it on push to main and on pull_request with the default activity types,
+# not on labeled/unlabeled: label runs on the same commit cancel each other and
+# can leave a required check cancelled (docs/rust-ci.md, "Triggers and
+# concurrency").
+#
 # Job names are stable so they can be used as required status checks:
 #   fmt, clippy (stable), clippy (msrv), test (<os>, stable), test (<os>, msrv),
 #   doc, semver-checks, coverage, and `wasm` when `wasm-test-args` or
@@ -157,6 +162,15 @@ jobs:
             fi
             printf '%s' "$out" | tr -d '\r' | tr '\n' ' '
           }
+
+          # Read the full-ci label now rather than only from the event payload:
+          # callers do not run CI on `labeled` events (docs/gate.md), and a
+          # re-run replays the payload of the original event. Labelling a PR
+          # full-ci therefore takes effect on "Re-run all jobs" or the next push.
+          if [ "$EVENT" = "pull_request" ] && [ "$FULL_CI_LABEL" != "true" ] \
+            && gh api "repos/$REPO/issues/$PR_NUMBER/labels" --jq '.[].name' 2>/dev/null | grep -qx 'full-ci'; then
+            FULL_CI_LABEL=true
+          fi
 
           if [ "$EVENT" = "pull_request" ]; then
             all_os=false

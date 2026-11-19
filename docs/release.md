@@ -58,6 +58,9 @@ A repository that publishes a crate needs:
 - **`BOT_APP_ID` and `BOT_PRIVATE_KEY`**: organization secrets, available to
   the repository without setting anything.
 - **The `release` label**, which release-plz puts on the release PR.
+- **A CI workflow that does not run on `labeled` events**: release-plz labels
+  the PR as it opens it, and label runs on the same commit cancel each other
+  and leave the PR blocked ([triggers](rust-ci.md#triggers-and-concurrency)).
 - **A first release with a token.** crates.io has no crate yet to trust a
   workflow for, so the first version is published with a short-lived token
   limited to the crate's name, with the `publish-new` scope: by hand, or as the

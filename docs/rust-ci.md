@@ -58,3 +58,31 @@ public-API scripts, generator tests) stay in the calling repo's own
 workflow next to the `ci` job. Gate the heavy ones with
 [`local-ci-gate.yml`](gate.md#gating-a-repos-own-jobs), and add their local
 equivalents to `.github/local-ci-extra.sh` so [local-ci](local-ci.md) runs them.
+
+## Triggers and concurrency
+
+Call it from a workflow that runs on `push` to `main` and on `pull_request`
+with the default activity types (`opened`, `synchronize`, `reopened`). Do not
+add `labeled`, `unlabeled` or `edited`: they start a run without a new commit.
+release-plz opens a release PR and labels it within a second, so every label
+starts one more run on the same head commit. When those runs share a
+`concurrency` group with `cancel-in-progress`, all but one are cancelled, and
+the one that survives need not be the newest. A required check counts only its
+newest run on the head commit, so a cancelled one leaves the PR blocked until
+someone re-runs or reopens it. The jobs that read a label (the `full-ci` label
+of the [gate](gate.md#labels), a repo's own label checks) read it from the API
+when they run, so a label takes effect with "Re-run all jobs" or the next push.
+
+A `concurrency` group per ref with `cancel-in-progress` is fine with these
+triggers: each event starts one run, and the run it cancels is older (a
+commit that is no longer the head, or the run a reopen replaces).
+
+```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+```

@@ -49,6 +49,9 @@ The script refuses a dirty tree, reads `msrv`, `features`, `run-doc`,
 
 When all pass it posts the commit status `local-ci` = success (with what ran,
 toolchains and host) on HEAD; on failure it posts nothing and exits non-zero.
+Right after `--push`, GitHub can briefly reject the status for the new commit
+(gh then reports only `unexpected end of JSON input`), so the post is retried
+for about 30 s, logging the HTTP status of each failed attempt.
 
 ## What it does not cover
 

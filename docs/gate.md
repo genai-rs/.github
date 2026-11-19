@@ -11,7 +11,7 @@ the stable tests on Windows run on every pull request.
 | Situation                                                                 | Mode       | Heavy jobs (clippy, test, doc, semver-checks, coverage, repo build/udeps/feature jobs) |
 | ------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
 | push to `main`, schedule, manual dispatch                                 | `full`     | all, on every OS                                                                     |
-| PR (incl. forks) without attestation                                      | `full`     | all on Linux, and `test (windows-latest, stable)`; the other macOS/Windows entries skipped (label the PR `full-ci` to run them) |
+| PR (incl. forks) without attestation                                      | `full`     | all on Linux, and `test (windows-latest, stable)`; the other macOS/Windows entries skipped (label the PR [`full-ci`](#labels) to run them) |
 | same-repo PR whose head commit has a `local-ci` = success status          | `local-ci` | skipped, except `test (windows-latest, stable)`                                      |
 | release-plz PR (bot author, `release-plz-*` / `automated/release-plz/*`) touching only `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md` | `release` | skipped; `release-sanity` runs `cargo check` + `cargo package --workspace --no-verify` (publishable members, packaged together so they find each other's new versions) |
 
@@ -19,6 +19,13 @@ For a same-repo PR the gate polls the head commit's statuses for up to
 `local-ci-wait-seconds` (default 60) for a `local-ci` = success status. Statuses
 created by `github-actions[bot]` are ignored, so CI can never attest itself;
 posting one needs write access to the repository.
+
+## Labels
+
+The gate reads the `full-ci` label from the API when it runs, not from the
+event that started the run. CI does not run on `labeled` events (see
+[triggers](rust-ci.md#triggers-and-concurrency)), so after labelling a PR
+`full-ci`, use "Re-run all jobs" on its CI run, or push.
 
 ## Windows on every pull request
 
