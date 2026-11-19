@@ -268,8 +268,21 @@ if [ "$PUSH" = 1 ]; then
 fi
 sha_on_origin || die "$SHA is not on github.com/$REPO; push it and re-run"
 
-gh api -X POST "repos/$REPO/statuses/$SHA" \
-  -f state=success -f context=local-ci -f description="$DESC" --silent
+# Right after a push GitHub can briefly reject a status for the new commit
+# with an empty error body, which gh reports only as "unexpected end of JSON
+# input". Retry for ~30 s (within the gate's 60 s wait) and show the HTTP status.
+post_status() {
+  gh api -i -X POST "repos/$REPO/statuses/$SHA" \
+    -f state=success -f context=local-ci -f description="$DESC" 2>&1
+}
+for attempt in 1 2 3 4 5 6; do
+  if out=$(post_status); then
+    break
+  fi
+  echo "posting local-ci failed (attempt $attempt): $(head -1 <<<"$out" | tr -d '\r') / $(tail -1 <<<"$out")" >&2
+  [ "$attempt" -lt 6 ] || die "could not post the local-ci status; re-run with --rerun once GitHub accepts it"
+  sleep $((attempt * 2))
+done
 say "posted local-ci=success on $REPO@$SHA"
 
 if [ "$RERUN" = 1 ] && [ "$PUSH" = 1 ]; then
