@@ -11,6 +11,7 @@
     ":rebaseStalePrs",
     ":prConcurrentLimit10"
   ],
+  "prHourlyLimit": 0,
   "timezone": "UTC",
   "schedule": [
     "after 2am and before 6am on monday"
@@ -79,12 +80,30 @@
       "automerge": false
     },
     {
-      "description": "Keep pre-1.0 Rust dependency updates isolated for review",
+      "description": "Group compatible pre-1.0 Rust updates (0.x.y to 0.x.z, within the caret range)",
       "matchManagers": [
         "cargo"
       ],
       "matchCurrentVersion": "<1.0.0",
+      "matchUpdateTypes": [
+        "patch"
+      ],
       "groupName": "pre-1.0 Rust updates",
+      "automerge": true
+    },
+    {
+      "description": "Pre-1.0 Rust minor updates (0.x to 0.y) are breaking in Cargo: one PR per crate, labelled breaking, for manual review",
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchCurrentVersion": "<1.0.0",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "labels": [
+        "dependencies",
+        "breaking"
+      ],
       "automerge": false
     },
     {
@@ -114,7 +133,7 @@
     {
       "description": "Dev dependencies - auto-merge all",
       "matchDepTypes": [
-        "devDependencies"
+        "dev-dependencies"
       ],
       "automerge": true,
       "labels": [
